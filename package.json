@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "mprocs \"pnpm run dev:next\" \"pnpm run dev:convex\" \"pnpm run dev:inngest\"",
-    "dev:next": "next dev",
+    "dev:next": "INNGEST_DEV=1 next dev",
     "dev:convex": "convex dev",
     "dev:inngest": "inngest-cli dev",
     "build": "next build",
