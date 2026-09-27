@@ -1,0 +1,13 @@
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+.next
+out
+build
+coverage
+src/generated
+prisma/migrations
+next-env.d.ts
+*.tsbuildinfo

@@ -1,15 +1,10 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { ThemeProvider } from "./theme-provider";
+import { ThemeProvider } from './theme-provider';
 
 export const Providers = ({ children }: Readonly<React.PropsWithChildren>) => {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute='class' defaultTheme='dark' enableSystem disableTransitionOnChange>
       {children}
     </ThemeProvider>
   );

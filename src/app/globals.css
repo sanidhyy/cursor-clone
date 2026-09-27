@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @theme inline {
   @keyframes accordion-down {
@@ -7,19 +7,13 @@
       height: 0;
     }
     to {
-      height: var(
-        --radix-accordion-content-height,
-        var(--accordion-panel-height, auto)
-      );
+      height: var(--radix-accordion-content-height, var(--accordion-panel-height, auto));
     }
   }
 
   @keyframes accordion-up {
     from {
-      height: var(
-        --radix-accordion-content-height,
-        var(--accordion-panel-height, auto)
-      );
+      height: var(--radix-accordion-content-height, var(--accordion-panel-height, auto));
     }
     to {
       height: 0;
@@ -29,61 +23,61 @@
 
 /* Custom variants */
 @custom-variant data-open {
-  &:where([data-state="open"]),
-  &:where([data-open]:not([data-open="false"])) {
+  &:where([data-state='open']),
+  &:where([data-open]:not([data-open='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-closed {
-  &:where([data-state="closed"]),
-  &:where([data-closed]:not([data-closed="false"])) {
+  &:where([data-state='closed']),
+  &:where([data-closed]:not([data-closed='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-checked {
-  &:where([data-state="checked"]),
-  &:where([data-checked]:not([data-checked="false"])) {
+  &:where([data-state='checked']),
+  &:where([data-checked]:not([data-checked='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-unchecked {
-  &:where([data-state="unchecked"]),
-  &:where([data-unchecked]:not([data-unchecked="false"])) {
+  &:where([data-state='unchecked']),
+  &:where([data-unchecked]:not([data-unchecked='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-selected {
-  &:where([data-selected="true"]) {
+  &:where([data-selected='true']) {
     @slot;
   }
 }
 
 @custom-variant data-disabled {
-  &:where([data-disabled="true"]),
-  &:where([data-disabled]:not([data-disabled="false"])) {
+  &:where([data-disabled='true']),
+  &:where([data-disabled]:not([data-disabled='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-active {
-  &:where([data-state="active"]),
-  &:where([data-active]:not([data-active="false"])) {
+  &:where([data-state='active']),
+  &:where([data-active]:not([data-active='false'])) {
     @slot;
   }
 }
 
 @custom-variant data-horizontal {
-  &:where([data-orientation="horizontal"]) {
+  &:where([data-orientation='horizontal']) {
     @slot;
   }
 }
 
 @custom-variant data-vertical {
-  &:where([data-orientation="vertical"]) {
+  &:where([data-orientation='vertical']) {
     @slot;
   }
 }
@@ -99,27 +93,27 @@
 
 /* scroll-fade */
 @property --scroll-fade-t {
-  syntax: "<length-percentage>";
+  syntax: '<length-percentage>';
   inherits: false;
   initial-value: 0px;
 }
 @property --scroll-fade-b {
-  syntax: "<length-percentage>";
+  syntax: '<length-percentage>';
   inherits: false;
   initial-value: 0px;
 }
 @property --scroll-fade-s {
-  syntax: "<length-percentage>";
+  syntax: '<length-percentage>';
   inherits: false;
   initial-value: 0px;
 }
 @property --scroll-fade-e {
-  syntax: "<length-percentage>";
+  syntax: '<length-percentage>';
   inherits: false;
   initial-value: 0px;
 }
 @property --scroll-fade-mask {
-  syntax: "*";
+  syntax: '*';
   inherits: false;
 }
 
@@ -266,7 +260,7 @@
     #000 calc(100% - var(--scroll-fade-e, 0px)),
     transparent 100%
   );
-  &:where([dir="rtl"], [dir="rtl"] *) {
+  &:where([dir='rtl'], [dir='rtl'] *) {
     --scroll-fade-inline: linear-gradient(
       to left,
       transparent 0,
@@ -350,10 +344,7 @@
   @supports (animation-timeline: scroll()) {
     animation: scroll-fade-reveal-b 1ms ease-in-out;
     animation-timeline: scroll(self y);
-    animation-range: calc(
-        100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))
-      )
-      100%;
+    animation-range: calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
     animation-fill-mode: both;
   }
 
@@ -413,10 +404,7 @@
   @supports (animation-timeline: scroll()) {
     animation: scroll-fade-reveal-e 1ms ease-in-out;
     animation-timeline: scroll(self x);
-    animation-range: calc(
-        100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))
-      )
-      100%;
+    animation-range: calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
     animation-fill-mode: both;
   }
 
@@ -436,7 +424,7 @@
     #000 var(--scroll-fade-s, 0px),
     #000 100%
   );
-  &:where([dir="rtl"], [dir="rtl"] *) {
+  &:where([dir='rtl'], [dir='rtl'] *) {
     --scroll-fade-mask: linear-gradient(
       to left,
       transparent 0,
@@ -474,7 +462,7 @@
     #000 calc(100% - var(--scroll-fade-e, 0px)),
     transparent 100%
   );
-  &:where([dir="rtl"], [dir="rtl"] *) {
+  &:where([dir='rtl'], [dir='rtl'] *) {
     --scroll-fade-mask: linear-gradient(
       to left,
       #000 0,
@@ -492,10 +480,7 @@
   @supports (animation-timeline: scroll()) {
     animation: scroll-fade-reveal-e 1ms ease-in-out;
     animation-timeline: scroll(self inline);
-    animation-range: calc(
-        100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))
-      )
-      100%;
+    animation-range: calc(100% - var(--scroll-fade-reveal, calc(var(--spacing) * 24))) 100%;
     animation-fill-mode: both;
   }
 
@@ -535,16 +520,16 @@
 
 /* shimmer */
 @property --shimmer-angle {
-  syntax: "<angle>";
+  syntax: '<angle>';
   inherits: true;
   initial-value: 20deg;
 }
 @property --shimmer-image {
-  syntax: "*";
+  syntax: '*';
   inherits: false;
 }
 @property --shimmer-text-fill {
-  syntax: "*";
+  syntax: '*';
   inherits: false;
 }
 
@@ -562,21 +547,16 @@
 @utility shimmer {
   --_spread: var(--shimmer-spread, calc(3ch + 40px));
   --_base: currentColor;
-  --_highlight: var(
-    --shimmer-color,
-    oklch(from currentColor l c h / calc(alpha* 0.2))
-  );
+  --_highlight: var(--shimmer-color, oklch(from currentColor l c h / calc(alpha* 0.2)));
 
   background-image: var(
     --shimmer-image,
     linear-gradient(
       calc(90deg + var(--shimmer-angle)),
       var(--_base) calc(50% - var(--_spread)),
-      color-mix(in oklch, var(--_highlight), var(--_base) 50%)
-        calc(50% - var(--_spread) * 0.5),
+      color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% - var(--_spread) * 0.5),
       var(--_highlight) 50%,
-      color-mix(in oklch, var(--_highlight), var(--_base) 50%)
-        calc(50% + var(--_spread) * 0.5),
+      color-mix(in oklch, var(--_highlight), var(--_base) 50%) calc(50% + var(--_spread) * 0.5),
       var(--_base) calc(50% + var(--_spread))
     )
   );
@@ -595,7 +575,7 @@
     );
   }
 
-  &:where([dir="rtl"], [dir="rtl"] *) {
+  &:where([dir='rtl'], [dir='rtl'] *) {
     animation-direction: reverse;
   }
 }
@@ -774,14 +754,13 @@
   }
 
   button:not([disabled]),
-  [role="button"]:not([disabled]) {
+  [role='button']:not([disabled]) {
     cursor: pointer;
   }
 }
 
 @theme inline {
-  --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1
-    var(--delay, 0ms);
+  --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1 var(--delay, 0ms);
 
   @keyframes cell-ripple {
     0% {
@@ -797,7 +776,7 @@
 }
 
 ::-webkit-scrollbar {
-  @apply w-2.5 h-2.5;
+  @apply h-2.5 w-2.5;
 }
 
 ::-webkit-scrollbar-track {
@@ -805,5 +784,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-border border-[1px] border-transparent border-solid bg-clip-padding;
+  @apply rounded-full border-[1px] border-solid border-transparent bg-border bg-clip-padding;
 }
