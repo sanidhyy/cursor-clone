@@ -11,7 +11,7 @@ import {
   ItemTitle,
 } from '@/components/ui/item';
 
-export const UnauthenticatedView = () => {
+export const Unauthenticated = () => {
   return (
     <div className='flex h-screen items-center justify-center bg-background'>
       <div className='w-full max-w-lg bg-muted'>
