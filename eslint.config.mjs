@@ -17,8 +17,7 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
-      'tailwindcss/classnames-order': 'off',
-      'tailwindcss/no-custom-classname': 'off',
+      '@next/next/no-img-element': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -27,7 +26,11 @@ const eslintConfig = defineConfig([
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      'tailwindcss/classnames-order': 'off',
+      'tailwindcss/no-custom-classname': 'off',
+      'no-alert': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-arrow-callback': 'warn',
     },
   },
   globalIgnores([
