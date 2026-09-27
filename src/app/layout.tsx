@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Inter } from 'next/font/google';
 
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
+
 import { Providers } from '@/components/providers';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +28,20 @@ const RootLayout = ({ children }: LayoutProps<'/'>) => {
       suppressHydrationWarning
     >
       <body className='flex min-h-full flex-col'>
-        <Providers>{children}</Providers>
+        <Providers>
+          <header>
+            <Show when='signed-out'>
+              <SignInButton />
+              <SignUpButton />
+            </Show>
+
+            <Show when='signed-in'>
+              <UserButton />
+            </Show>
+          </header>
+
+          {children}
+        </Providers>
       </body>
     </html>
   );
