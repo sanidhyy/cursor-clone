@@ -7,7 +7,6 @@ bun.lockb
 out
 build
 coverage
-src/generated
-prisma/migrations
 next-env.d.ts
 *.tsbuildinfo
+convex/_generated

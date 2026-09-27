@@ -33,14 +33,7 @@ const eslintConfig = defineConfig([
       'prefer-arrow-callback': 'warn',
     },
   },
-  globalIgnores([
-    '.next/**',
-    'out/**',
-    'build/**',
-    'next-env.d.ts',
-    'src/generated/**',
-    'prisma/migrations/**',
-  ]),
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'convex/_generated']),
 ]);
 
 export default eslintConfig;
