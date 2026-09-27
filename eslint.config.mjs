@@ -1,14 +1,24 @@
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import prettier from 'eslint-config-prettier/flat';
+import tailwindcss from 'eslint-plugin-tailwindcss';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  tailwindcss.configs.recommended,
   prettier,
   {
+    settings: {
+      tailwindcss: {
+        cssConfigPath: './src/app/globals.css',
+        functions: ['cn', 'clsx', 'cva'],
+      },
+    },
     rules: {
+      'tailwindcss/classnames-order': 'off',
+      'tailwindcss/no-custom-classname': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {

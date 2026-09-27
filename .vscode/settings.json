@@ -9,5 +9,6 @@
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "files.associations": {
     "*.css": "tailwindcss"
-  }
+  },
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore"
 }
