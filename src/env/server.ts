@@ -21,5 +21,8 @@ export const env = createEnv({
   server: {
     // clerk api keys
     CLERK_SECRET_KEY: z.string().trim().min(1).startsWith('sk_'),
+
+    // firecrawl api key
+    FIRECRAWL_API_KEY: z.string().trim().min(1).startsWith('fc-'),
   },
 });
