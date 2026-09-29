@@ -1,33 +1,42 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
+import { verifyAuth } from './auth';
 
 export const create = mutation({
   args: {
     name: v.string(),
   },
   handler: async ({ auth, db }, { name }) => {
-    const user = await auth.getUserIdentity();
-    if (!user) throw new Error('Unauthorized');
+    const user = await verifyAuth(auth);
 
-    await db.insert('projects', {
+    const projectId = await db.insert('projects', {
       name,
       ownerId: user.subject,
+      updatedAt: Date.now(),
     });
+
+    return projectId;
   },
 });
 
 export const get = query({
-  args: {},
-  handler: async ({ auth, db }) => {
-    const user = await auth.getUserIdentity();
-    if (!user) return [];
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async ({ auth, db }, { limit }) => {
+    const user = await verifyAuth(auth);
 
-    const projects = await db
+    if (!!limit) {
+      return await db
+        .query('projects')
+        .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
+        .take(limit);
+    }
+
+    return await db
       .query('projects')
       .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
       .collect();
-
-    return projects;
   },
 });
