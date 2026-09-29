@@ -1,13 +1,16 @@
 'use client';
 
+import * as React from 'react';
+import { useState } from 'react';
 import { Poppins } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { UserButton } from '@clerk/nextjs';
 import { cn } from 'cn';
+import { CloudCheckIcon } from 'lucide-react';
 
-import { useProject } from '@/features/projects/hooks/use-projects';
+import { useProject, useRenameProject } from '@/features/projects/hooks/use-projects';
 
 import {
   Breadcrumb,
@@ -18,6 +21,9 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { buttonVariants } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatTimestamp } from '@/lib/utils';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -30,6 +36,30 @@ interface NavbarProps {
 
 export const Navbar = ({ projectId }: NavbarProps) => {
   const project = useProject(projectId);
+  const renameProject = useRenameProject();
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [name, setName] = useState('');
+
+  const handleStartRename = () => {
+    if (!project) return;
+    setName(project.name);
+    setIsRenaming(true);
+  };
+
+  const handleSubmit = () => {
+    setIsRenaming(false);
+
+    const trimmedName = name.trim();
+    if (!trimmedName || !project || trimmedName === project.name) return;
+
+    renameProject({ id: project._id, name: trimmedName });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSubmit();
+    else if (e.key === 'Escape') setIsRenaming(false);
+  };
 
   return (
     <nav className='flex items-center justify-between gap-x-2 border-b bg-sidebar p-2'>
@@ -52,12 +82,49 @@ export const Navbar = ({ projectId }: NavbarProps) => {
             <BreadcrumbSeparator className='mr-1 ml-0' />
 
             <BreadcrumbItem>
-              <BreadcrumbPage className='max-w-40 cursor-pointer truncate text-sm font-medium hover:text-primary'>
-                {project?.name || 'Loading...'}
-              </BreadcrumbPage>
+              {isRenaming ? (
+                <input
+                  autoFocus
+                  type='text'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onBlur={handleSubmit}
+                  onKeyDown={handleKeyDown}
+                  className='max-w-40 truncate bg-transparent text-sm font-medium text-foreground outline-none focus:ring-1 focus:ring-ring focus:ring-inset'
+                />
+              ) : (
+                <BreadcrumbPage
+                  onClick={handleStartRename}
+                  className='max-w-40 cursor-pointer truncate text-sm font-medium hover:text-primary'
+                >
+                  {project?.name || 'Loading...'}
+                </BreadcrumbPage>
+              )}
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        {!!project &&
+          (project.importStatus === 'importing' ? (
+            <Tooltip>
+              <TooltipTrigger>
+                <Spinner className='text-muted-foreground' />
+              </TooltipTrigger>
+
+              <TooltipContent>Importing...</TooltipContent>
+            </Tooltip>
+          ) : (
+            project.updatedAt && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <CloudCheckIcon className='size-4 text-muted-foreground' />
+                </TooltipTrigger>
+
+                <TooltipContent>Saved {formatTimestamp(project.updatedAt)}</TooltipContent>
+              </Tooltip>
+            )
+          ))}
       </div>
 
       <div className='flex items-center gap-2'>

@@ -30,14 +30,14 @@ export const get = query({
     if (!!limit) {
       return await db
         .query('projects')
-        .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
+        .withIndex('by_owner_updated_at', (q) => q.eq('ownerId', user.subject))
         .order('desc')
         .take(limit);
     }
 
     return await db
       .query('projects')
-      .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
+      .withIndex('by_owner_updated_at', (q) => q.eq('ownerId', user.subject))
       .order('desc')
       .collect();
   },
@@ -54,5 +54,25 @@ export const getById = query({
     if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
 
     return project;
+  },
+});
+
+export const rename = mutation({
+  args: {
+    id: v.id('projects'),
+    name: v.string(),
+  },
+  handler: async ({ auth, db }, { id: projectId, name: projectName }) => {
+    const user = await verifyAuth(auth);
+
+    const project = await db.get('projects', projectId);
+    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+
+    await db.patch('projects', projectId, {
+      name: projectName,
+      updatedAt: Date.now(),
+    });
+
+    return projectId;
   },
 });

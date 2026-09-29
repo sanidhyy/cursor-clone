@@ -18,7 +18,10 @@ const schema = defineSchema({
       )
     ),
     exportRepoUrl: v.optional(v.string()),
-  }).index('by_owner', ['ownerId']),
+  })
+    .index('by_owner', ['ownerId'])
+    .index('by_updated_at', ['updatedAt'])
+    .index('by_owner_updated_at', ['ownerId', 'updatedAt']),
 });
 
 export default schema;

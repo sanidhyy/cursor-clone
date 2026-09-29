@@ -17,7 +17,7 @@ export const ProjectsList = ({ onViewAll }: ProjectsListProps) => {
   if (projects === undefined) {
     return (
       <div className='flex items-center justify-center p-4'>
-        <Spinner className='size-4 text-center text-ring' />
+        <Spinner className='text-muted-foreground' />
       </div>
     );
   }

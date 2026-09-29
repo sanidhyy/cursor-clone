@@ -15,20 +15,58 @@ export const useProjects = (limit?: number) => {
 export const useCreateProject = () => {
   const { userId } = useAuth();
 
-  return useMutation(api.projects.create).withOptimisticUpdate((localStore, { name }) => {
-    const existingProjects = localStore.getQuery(api.projects.get, {});
-    if (!!existingProjects && !!userId) {
+  return useMutation(api.projects.create).withOptimisticUpdate(
+    (localStore, { name: projectName }) => {
       // eslint-disable-next-line react-hooks/purity -- Optimistic update callbacks access external state
       const now = Date.now();
-      const newProject: Doc<'projects'> = {
-        _id: crypto.randomUUID() as Id<'projects'>,
-        _creationTime: now,
-        name,
-        ownerId: userId,
-        updatedAt: now,
-      };
+      const existingProjects = localStore.getQuery(api.projects.get, {});
 
-      localStore.setQuery(api.projects.get, {}, [newProject, ...existingProjects]);
+      if (!!existingProjects && !!userId) {
+        const newProject: Doc<'projects'> = {
+          _id: crypto.randomUUID() as Id<'projects'>,
+          _creationTime: now,
+          name: projectName,
+          ownerId: userId,
+          updatedAt: now,
+        };
+
+        localStore.setQuery(api.projects.get, {}, [newProject, ...existingProjects]);
+      }
     }
-  });
+  );
+};
+
+export const useRenameProject = () => {
+  const { userId } = useAuth();
+
+  return useMutation(api.projects.rename).withOptimisticUpdate(
+    (localStore, { id: projectId, name: projectName }) => {
+      // eslint-disable-next-line react-hooks/purity -- Optimistic update callbacks access external state
+      const now = Date.now();
+      const existingProject = localStore.getQuery(api.projects.getById, {
+        id: projectId as Id<'projects'>,
+      });
+
+      if (!!existingProject && !!userId) {
+        localStore.setQuery(
+          api.projects.getById,
+          { id: projectId },
+          { ...existingProject, name: projectName, updatedAt: now }
+        );
+      }
+
+      const existingProjects = localStore.getQuery(api.projects.get, {});
+      if (!!existingProjects && !!userId) {
+        localStore.setQuery(
+          api.projects.get,
+          {},
+          existingProjects.map((project) => {
+            return project._id === projectId
+              ? { ...project, name: projectName, updatedAt: now }
+              : project;
+          })
+        );
+      }
+    }
+  );
 };
