@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Poppins } from 'next/font/google';
+import Image from 'next/image';
 
 import { cn } from 'cn';
 import { SparkleIcon } from 'lucide-react';
@@ -50,7 +51,13 @@ export const ProjectsView = () => {
         <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-4'>
           <div className='flex w-full items-center justify-between gap-4'>
             <div className='group/logo flex w-full items-center gap-2'>
-              <img src='/logo.svg' alt='Polaris' className='size-8 md:size-11.5' />
+              <Image
+                src='/logo.svg'
+                alt='Polaris Logo'
+                height={46}
+                width={46}
+                className='size-8 md:size-11.5'
+              />
               <h1 className={cn('text-4xl font-semibold md:text-5xl', poppins.className)}>
                 Polaris
               </h1>

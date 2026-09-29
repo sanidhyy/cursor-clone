@@ -7,11 +7,11 @@ export const create = mutation({
   args: {
     name: v.string(),
   },
-  handler: async ({ auth, db }, { name }) => {
+  handler: async ({ auth, db }, { name: projectName }) => {
     const user = await verifyAuth(auth);
 
     const projectId = await db.insert('projects', {
-      name,
+      name: projectName,
       ownerId: user.subject,
       updatedAt: Date.now(),
     });
@@ -40,5 +40,19 @@ export const get = query({
       .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
       .order('desc')
       .collect();
+  },
+});
+
+export const getById = query({
+  args: {
+    id: v.id('projects'),
+  },
+  handler: async ({ auth, db }, { id: projectId }) => {
+    const user = await verifyAuth(auth);
+
+    const project = await db.get('projects', projectId);
+    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+
+    return project;
   },
 });
