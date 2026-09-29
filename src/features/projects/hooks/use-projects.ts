@@ -14,7 +14,7 @@ export const useCreateProject = () => {
   return useMutation(api.projects.create).withOptimisticUpdate((localStore, { name }) => {
     const existingProjects = localStore.getQuery(api.projects.get, {});
     if (!!existingProjects && !!userId) {
-      // eslint-disable-next-line react-hooks/purity
+      // eslint-disable-next-line react-hooks/purity -- Optimistic update callbacks access external state
       const now = Date.now();
       const newProject: Doc<'projects'> = {
         _id: crypto.randomUUID() as Id<'projects'>,

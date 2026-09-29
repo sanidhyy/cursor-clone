@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { cn } from 'cn';
 import { ArrowRightIcon } from 'lucide-react';
 
-import { getProjectIcon } from '@/features/projects/lib/get-project-icon';
-
 import { Doc } from '@/../convex/_generated/dataModel';
 import { buttonVariants } from '@/components/ui/button';
 import { formatTimestamp } from '@/lib/utils';
+
+import { ProjectIcon } from './project-icon';
 
 interface ContinueCardProps {
   project: Doc<'projects'>;
@@ -27,7 +27,7 @@ export const ContinueCard = ({ project }: ContinueCardProps) => {
       >
         <div className='flex w-full items-center justify-between'>
           <div className='flex items-center gap-2'>
-            {getProjectIcon(project.importStatus)}
+            <ProjectIcon importStatus={project.importStatus} />
             <span className='truncate font-medium'>{project.name}</span>
           </div>
 

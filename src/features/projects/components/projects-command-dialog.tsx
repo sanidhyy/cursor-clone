@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useProjects } from '@/features/projects/hooks/use-projects';
-import { getProjectIcon } from '@/features/projects/lib/get-project-icon';
 
 import {
   Command,
@@ -12,7 +11,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from '@/components/ui/command';
+import { formatTimestamp } from '@/lib/utils';
+
+import { ProjectIcon } from './project-icon';
 
 interface ProjectsCommandDialogProps {
   open: boolean;
@@ -49,8 +52,16 @@ export const ProjectsCommandDialog = ({ open, onOpenChange }: ProjectsCommandDia
                 value={`${project.name}-${project._id}`}
                 onSelect={() => handleSelect(project._id)}
               >
-                {getProjectIcon(project.importStatus)}
-                <span>{project.name}</span>
+                <ProjectIcon
+                  importStatus={project.importStatus}
+                  className='group-data-selected/command-item:text-foreground/80!'
+                />
+                <span className='truncate text-muted-foreground group-data-selected/command-item:text-foreground'>
+                  {project.name}
+                </span>
+                <CommandShortcut className='tracking-normal group-data-selected/command-item:text-foreground/80'>
+                  {formatTimestamp(project.updatedAt)}
+                </CommandShortcut>
               </CommandItem>
             ))}
           </CommandGroup>
