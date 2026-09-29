@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Inter } from 'next/font/google';
 
+import { cn } from 'cn';
+
 import { Providers } from '@/components/providers';
-import { cn } from '@/lib/utils';
 
 import './globals.css';
 

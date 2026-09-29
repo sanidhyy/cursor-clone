@@ -2,6 +2,7 @@
 
 import { Poppins } from 'next/font/google';
 
+import { cn } from 'cn';
 import { SparkleIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
@@ -11,7 +12,6 @@ import { useCreateProject } from '@/features/projects/hooks/use-projects';
 
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
-import { cn } from '@/lib/utils';
 
 const poppins = Poppins({
   subsets: ['latin'],

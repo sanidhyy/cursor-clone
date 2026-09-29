@@ -1,12 +1,13 @@
 import Link from 'next/link';
 
+import { cn } from 'cn';
 import { ArrowRightIcon } from 'lucide-react';
 
 import { getProjectIcon } from '@/features/projects/lib/get-project-icon';
 
 import { Doc } from '@/../convex/_generated/dataModel';
 import { buttonVariants } from '@/components/ui/button';
-import { cn, formatTimestamp } from '@/lib/utils';
+import { formatTimestamp } from '@/lib/utils';
 
 interface ContinueCardProps {
   project: Doc<'projects'>;
