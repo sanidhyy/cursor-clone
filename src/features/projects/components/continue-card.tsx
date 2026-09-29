@@ -1,0 +1,40 @@
+import Link from 'next/link';
+
+import { ArrowRightIcon } from 'lucide-react';
+
+import { getProjectIcon } from '@/features/projects/lib/get-project-icon';
+
+import { Doc } from '@/../convex/_generated/dataModel';
+import { buttonVariants } from '@/components/ui/button';
+import { cn, formatTimestamp } from '@/lib/utils';
+
+interface ContinueCardProps {
+  project: Doc<'projects'>;
+}
+
+export const ContinueCard = ({ project }: ContinueCardProps) => {
+  return (
+    <div className='flex flex-col gap-2'>
+      <span className='text-xs text-muted-foreground'>Last updated</span>
+
+      <Link
+        href={`/projects/${project._id}`}
+        className={cn(
+          buttonVariants({ variant: 'outline' }),
+          'group flex h-auto flex-col items-start justify-start gap-2 rounded-none border bg-background p-4'
+        )}
+      >
+        <div className='flex w-full items-center justify-between'>
+          <div className='flex items-center gap-2'>
+            {getProjectIcon(project.importStatus)}
+            <span className='truncate font-medium'>{project.name}</span>
+          </div>
+
+          <ArrowRightIcon className='size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5' />
+        </div>
+
+        <span className='text-xs text-muted-foreground'>{formatTimestamp(project.updatedAt)}</span>
+      </Link>
+    </div>
+  );
+};
