@@ -31,12 +31,14 @@ export const get = query({
       return await db
         .query('projects')
         .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
+        .order('desc')
         .take(limit);
     }
 
     return await db
       .query('projects')
       .withIndex('by_owner', (q) => q.eq('ownerId', user.subject))
+      .order('desc')
       .collect();
   },
 });
