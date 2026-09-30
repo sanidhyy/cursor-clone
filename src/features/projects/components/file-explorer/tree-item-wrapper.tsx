@@ -50,7 +50,7 @@ export const TreeItemWrapper = ({
           }
         }}
         className={cn(
-          'group flex h-5.5 w-full items-center gap-1 outline-none hover:bg-accent/30 focus:ring-1 focus:ring-ring focus:ring-inset',
+          'group flex h-5.5 w-full cursor-pointer items-center gap-1 outline-none hover:bg-accent/30 focus:ring-1 focus:ring-ring focus:ring-inset',
           isActive && 'bg-accent/30'
         )}
         style={{ paddingLeft: getItemPadding(level, file.type === 'file') }}
