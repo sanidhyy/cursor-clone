@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
+import { mutation, query } from '@/../convex/_generated/server';
+
 import { verifyAuth } from './auth';
 
 export const create = mutation({
