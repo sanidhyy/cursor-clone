@@ -3,21 +3,58 @@ import { useState } from 'react';
 import { cn } from 'cn';
 import { ChevronRightIcon, CopyMinusIcon, FilePlusCornerIcon, FolderPlusIcon } from 'lucide-react';
 
+import {
+  useCreateFile,
+  useCreateFolder,
+  useFolderContents,
+} from '@/features/projects/hooks/use-files';
 import { useProject } from '@/features/projects/hooks/use-projects';
-import { FileType } from '@/features/projects/types';
+import type { FileType } from '@/features/projects/types';
 
+import type { Id } from '@/../convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+import { CreateInput } from './create-input';
+import { LoadingRow } from './loading-row';
+import { Tree } from './tree';
 
 interface FileExplorerProps {
   projectId: string;
 }
 
 export const FileExplorer = ({ projectId }: FileExplorerProps) => {
-  const project = useProject(projectId);
   const [isOpen, setIsOpen] = useState(false);
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<FileType | null>(null);
+
+  const project = useProject(projectId);
+  const createFile = useCreateFile();
+  const createFolder = useCreateFolder();
+  const rootFiles = useFolderContents({
+    projectId: projectId as Id<'projects'>,
+    enabled: isOpen,
+  });
+
+  const handleCreate = (name: string) => {
+    const type = creating;
+    setCreating(null);
+
+    if (type === 'file') {
+      createFile({
+        projectId: projectId as Id<'projects'>,
+        name,
+        content: '',
+        parentId: undefined,
+      });
+    } else {
+      createFolder({
+        projectId: projectId as Id<'projects'>,
+        name,
+        parentId: undefined,
+      });
+    }
+  };
 
   return (
     <div className='h-full bg-sidebar'>
@@ -39,6 +76,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsOpen(true);
+                setCreating('file');
               }}
               variant='highlight'
               size='icon-xs'
@@ -51,6 +89,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsOpen(true);
+                setCreating('folder');
               }}
               variant='highlight'
               size='icon-xs'
@@ -71,6 +110,30 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
             </Button>
           </div>
         </div>
+
+        {isOpen && (
+          <>
+            {rootFiles === undefined && <LoadingRow level={0} />}
+
+            {creating && (
+              <CreateInput
+                type={creating}
+                level={0}
+                onSubmit={handleCreate}
+                onCancel={() => setCreating(null)}
+              />
+            )}
+
+            {rootFiles?.map((file) => (
+              <Tree
+                key={`${file._id}-${collapseKey}`}
+                file={file}
+                level={0}
+                projectId={projectId}
+              />
+            ))}
+          </>
+        )}
       </ScrollArea>
     </div>
   );
