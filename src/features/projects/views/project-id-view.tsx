@@ -2,10 +2,18 @@
 
 import { useState } from 'react';
 
+import { Allotment } from 'allotment';
 import { cn } from 'cn';
 import { FaGithub } from 'react-icons/fa';
 
+import { FileExplorer } from '@/features/projects/components/file-explorer';
 import { Tab } from '@/features/projects/components/tab';
+import {
+  DEFAULT_MAIN_SIZE,
+  DEFAULT_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+  MIN_SIDEBAR_WIDTH,
+} from '@/features/projects/constants';
 import type { View } from '@/features/projects/types';
 
 interface ProjectIdViewProps {
@@ -39,7 +47,20 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
 
       <div className='relative flex-1'>
         <div className={cn('invisible absolute inset-0', activeView === 'editor' && 'visible')}>
-          <div>Editor</div>
+          <Allotment defaultSizes={[DEFAULT_SIDEBAR_WIDTH, DEFAULT_MAIN_SIZE]}>
+            <Allotment.Pane
+              snap
+              minSize={MIN_SIDEBAR_WIDTH}
+              maxSize={MAX_SIDEBAR_WIDTH}
+              preferredSize={DEFAULT_SIDEBAR_WIDTH}
+            >
+              <FileExplorer projectId={projectId} />
+            </Allotment.Pane>
+
+            <Allotment.Pane>
+              <p>Editor view</p>
+            </Allotment.Pane>
+          </Allotment>
         </div>
 
         <div className={cn('invisible absolute inset-0', activeView === 'preview' && 'visible')}>

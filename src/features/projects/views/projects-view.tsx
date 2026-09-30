@@ -23,7 +23,6 @@ const poppins = Poppins({
 
 export const ProjectsView = () => {
   const createProject = useCreateProject();
-
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
 
   useEffect(() => {
