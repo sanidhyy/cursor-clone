@@ -68,7 +68,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
             className={cn('size-4 shrink-0 text-muted-foreground', isOpen && 'rotate-90')}
           />
 
-          <p className='line-clamp-1 text-xs uppercase'>{project?.name ?? 'Loading...'}</p>
+          <p className='line-clamp-1 text-xs uppercase'>{project?.name || 'Loading...'}</p>
 
           <div className='ml-auto flex items-center gap-0.5 opacity-0 transition-none duration-0 group-hover/project:opacity-100'>
             <Button
