@@ -33,11 +33,11 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ projectId }: NavbarProps) => {
-  const project = useProject(projectId);
-  const renameProject = useRenameProject();
-
   const [isRenaming, setIsRenaming] = useState(false);
   const [name, setName] = useState('');
+
+  const project = useProject(projectId);
+  const renameProject = useRenameProject();
 
   const handleStartRename = () => {
     if (!project) return;
@@ -110,7 +110,9 @@ export const Navbar = ({ projectId }: NavbarProps) => {
                 <Spinner className='text-muted-foreground' />
               </TooltipTrigger>
 
-              <TooltipContent>Importing...</TooltipContent>
+              <TooltipContent side='right' sideOffset={10}>
+                Importing...
+              </TooltipContent>
             </Tooltip>
           ) : (
             project.updatedAt && (
@@ -119,7 +121,9 @@ export const Navbar = ({ projectId }: NavbarProps) => {
                   <CloudCheckIcon className='size-4 text-muted-foreground' />
                 </TooltipTrigger>
 
-                <TooltipContent>Saved {formatTimestamp(project.updatedAt)}</TooltipContent>
+                <TooltipContent side='right' sideOffset={10}>
+                  Saved {formatTimestamp(project.updatedAt)}
+                </TooltipContent>
               </Tooltip>
             )
           ))}

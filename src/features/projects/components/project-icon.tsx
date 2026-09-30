@@ -2,7 +2,7 @@ import { cn } from 'cn';
 import { AlertCircleIcon, GlobeIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 
-import { Doc } from '@/../convex/_generated/dataModel';
+import type { Doc } from '@/../convex/_generated/dataModel';
 import { Spinner } from '@/components/ui/spinner';
 
 interface ProjectIconProps extends React.ComponentProps<'svg'> {

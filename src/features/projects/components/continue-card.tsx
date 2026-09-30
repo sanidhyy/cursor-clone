@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { cn } from 'cn';
 import { ArrowRightIcon } from 'lucide-react';
 
-import { Doc } from '@/../convex/_generated/dataModel';
+import type { Doc } from '@/../convex/_generated/dataModel';
 import { buttonVariants } from '@/components/ui/button';
 import { formatTimestamp } from '@/lib/utils';
 

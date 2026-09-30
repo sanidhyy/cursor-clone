@@ -8,7 +8,7 @@ import { ContinueCard } from './continue-card';
 import { ProjectItem } from './project-item';
 
 interface ProjectsListProps {
-  onViewAll: () => void;
+  onViewAll: VoidFunction;
 }
 
 export const ProjectsList = ({ onViewAll }: ProjectsListProps) => {

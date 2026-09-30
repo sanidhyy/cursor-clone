@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 
 import { verifyAuth } from './auth';
