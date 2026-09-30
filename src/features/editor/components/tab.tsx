@@ -5,7 +5,7 @@ import { XIcon } from 'lucide-react';
 import { useEditor } from '@/features/editor/hooks/use-editor';
 import { useFile } from '@/features/projects/hooks/use-files';
 
-import { Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { Spinner } from '@/components/ui/spinner';
 
 interface TabProps {

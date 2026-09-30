@@ -4,7 +4,7 @@ import { cn } from 'cn';
 
 import { getItemPadding } from '@/features/projects/lib/utils';
 
-import { Doc } from '@/../convex/_generated/dataModel';
+import type { Doc } from '@/../convex/_generated/dataModel';
 import {
   ContextMenu,
   ContextMenuContent,
