@@ -175,6 +175,9 @@ importers:
       '@clerk/nextjs':
         specifier: ^7.9.7
         version: 7.9.7(next@16.3.6(@babel/core@7.29.7(supports-color@7.2.0))(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@react-symbols/icons':
+        specifier: ^1.4.1
+        version: 1.4.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
         version: 0.13.11(typescript@5.9.3)(zod@4.6.5)
@@ -1668,6 +1671,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@react-symbols/icons@1.4.1':
+    resolution: {integrity: sha512-LJ9eiCJOoWrT4sjsamUBoSjbRkEeo6CYxqbEuicYib/cwwbN0ndTTGFx4at9D9CwEVdFxW/ZZfNrIdzjA4scIg==}
+    peerDependencies:
+      react: '>= 16.8'
+      react-dom: '>= 16.8'
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
@@ -5533,6 +5542,11 @@ snapshots:
       react: 19.2.8
     optionalDependencies:
       '@types/react': 19.3.0
+
+  '@react-symbols/icons@1.4.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
 
   '@rtsao/scc@1.1.0': {}
 
