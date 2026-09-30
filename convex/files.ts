@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import type { Id } from '@/../convex/_generated/dataModel';
+import type { Doc, Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 
 import { verifyAuth } from './auth';
@@ -68,6 +68,34 @@ export const getFolderContents = query({
     });
 
     return sortedFiles;
+  },
+});
+
+export const getFilePath = query({
+  args: {
+    id: v.id('files'),
+  },
+  handler: async ({ auth, db }, { id: fileId }) => {
+    const user = await verifyAuth(auth);
+
+    const file = await db.get('files', fileId);
+    if (!file) throw new Error('File not found');
+
+    const project = await db.get('projects', file.projectId);
+    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+
+    const path: { _id: Id<'files'>; name: string }[] = [];
+    let currentId: Id<'files'> | undefined = fileId;
+
+    while (currentId) {
+      const file = (await db.get('files', currentId)) as Doc<'files'> | undefined;
+      if (!file) break;
+
+      path.unshift({ _id: file._id, name: file.name });
+      currentId = file.parentId;
+    }
+
+    return path;
   },
 });
 

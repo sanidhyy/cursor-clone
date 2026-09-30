@@ -4,6 +4,7 @@ import { FileIcon, FolderIcon } from '@react-symbols/icons/utils';
 import { cn } from 'cn';
 import { ChevronRightIcon } from 'lucide-react';
 
+import { useEditor } from '@/features/editor/hooks/use-editor';
 import {
   useCreateFile,
   useCreateFolder,
@@ -36,6 +37,8 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
   const createFolder = useCreateFolder();
   const renameFile = useRenameFile();
   const deleteFile = useDeleteFile();
+
+  const { openFile, closeTab, activeTabId } = useEditor(projectId as Id<'projects'>);
 
   const folderContents = useFolderContents({
     projectId: projectId as Id<'projects'>,
@@ -78,6 +81,7 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
 
   if (file.type === 'file') {
     const fileName = file.name;
+    const isActive = activeTabId === file._id;
 
     if (isRenaming) {
       return (
@@ -95,11 +99,12 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
       <TreeItemWrapper
         file={file}
         level={level}
-        isActive={false}
-        onClick={() => {}}
-        onDoubleClick={() => {}}
+        isActive={isActive}
+        onClick={() => openFile(file._id, { pinned: false })}
+        onDoubleClick={() => openFile(file._id, { pinned: true })}
         onRename={() => setIsRenaming(true)}
         onDelete={() => {
+          closeTab(file._id);
           deleteFile({ id: file._id });
         }}
       >

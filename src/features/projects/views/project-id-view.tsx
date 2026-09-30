@@ -6,6 +6,7 @@ import { Allotment } from 'allotment';
 import { cn } from 'cn';
 import { FaGithub } from 'react-icons/fa';
 
+import { EditorView } from '@/features/editor/components/editor-view';
 import { FileExplorer } from '@/features/projects/components/file-explorer';
 import { Tab } from '@/features/projects/components/tab';
 import {
@@ -58,7 +59,7 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
             </Allotment.Pane>
 
             <Allotment.Pane>
-              <p>Editor view</p>
+              <EditorView projectId={projectId} />
             </Allotment.Pane>
           </Allotment>
         </div>
