@@ -22,6 +22,9 @@ export const env = createEnv({
     // clerk api keys
     CLERK_SECRET_KEY: z.string().trim().min(1).startsWith('sk_'),
 
+    // openai api key
+    OPENAI_API_KEY: z.string().trim().min(1).startsWith('sk-'),
+
     // firecrawl api key
     FIRECRAWL_API_KEY: z.string().trim().min(1).startsWith('fc-'),
   },
