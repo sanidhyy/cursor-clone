@@ -9,10 +9,12 @@ import {
   WidgetType,
 } from '@codemirror/view';
 
+import { SUGGESTION_DEBOUNCE_MS } from '@/features/editor/constants';
+
 const setSuggestionEffect = StateEffect.define<string | null>();
 
 const suggestionState = StateField.define<string | null>({
-  create: () => '',
+  create: () => null,
   update: (value, transaction) => {
     for (const effect of transaction.effects)
       if (effect.is(setSuggestionEffect)) return effect.value;
@@ -37,6 +39,55 @@ class SuggestionWidget extends WidgetType {
   }
 }
 
+let debounceTimer: number | null = null;
+let isWaitingForSuggestion = false;
+
+const generateFakeSuggestion = (textBeforeCursor: string): string | null => {
+  const trimmed = textBeforeCursor.trimEnd();
+  if (trimmed.endsWith('const')) return ' myVariable = ';
+  if (trimmed.endsWith('function')) return ' myFunction() {\n \n}';
+  if (trimmed.endsWith('console.')) return 'log()';
+  if (trimmed.endsWith('return')) return ' null;';
+
+  return null;
+};
+
+const createDebouncePlugin = (fileName: string) => {
+  return ViewPlugin.fromClass(
+    class {
+      constructor(view: CodeMirrorEditorView) {
+        this.triggerSuggestion(view);
+      }
+
+      update(update: ViewUpdate) {
+        if (update.docChanged || update.selectionSet) this.triggerSuggestion(update.view);
+      }
+
+      triggerSuggestion(view: CodeMirrorEditorView) {
+        if (debounceTimer !== null) clearTimeout(debounceTimer);
+
+        isWaitingForSuggestion = true;
+
+        debounceTimer = window.setTimeout(async () => {
+          const cursor = view.state.selection.main.head;
+          const line = view.state.doc.lineAt(cursor);
+          const textBeforeCursor = line.text.slice(0, cursor - line.from);
+          const suggestion = generateFakeSuggestion(textBeforeCursor);
+
+          isWaitingForSuggestion = false;
+          view.dispatch({
+            effects: setSuggestionEffect.of(suggestion),
+          });
+        }, SUGGESTION_DEBOUNCE_MS);
+      }
+
+      destroy() {
+        if (debounceTimer !== null) clearTimeout(debounceTimer);
+      }
+    }
+  );
+};
+
 const renderPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
@@ -55,6 +106,8 @@ const renderPlugin = ViewPlugin.fromClass(
     }
 
     build(view: CodeMirrorEditorView) {
+      if (isWaitingForSuggestion) return Decoration.none;
+
       const suggestion = view.state.field(suggestionState);
       if (!suggestion) return Decoration.none;
 
@@ -91,6 +144,7 @@ const acceptSuggestionKeymap = keymap.of([
 
 export const suggestion = (fileName: string) => [
   suggestionState,
+  createDebouncePlugin(fileName),
   renderPlugin,
   acceptSuggestionKeymap,
 ];
