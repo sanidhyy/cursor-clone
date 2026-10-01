@@ -24,7 +24,7 @@ interface FileExplorerProps {
 }
 
 export const FileExplorer = ({ projectId }: FileExplorerProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<FileType | null>(null);
 

@@ -13,9 +13,11 @@ import { customTheme } from '@/features/editor/extensions/theme';
 
 interface CodeEditorProps {
   fileName: string;
+  initialValue?: string;
+  onChange: (value: string) => void;
 }
 
-export const CodeEditor = ({ fileName }: CodeEditorProps) => {
+export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<CodeMirrorEditorView | null>(null);
 
@@ -25,19 +27,7 @@ export const CodeEditor = ({ fileName }: CodeEditorProps) => {
     if (!editorRef.current) return;
 
     const view = new CodeMirrorEditorView({
-      doc: `const Counter = () => {
-  const [value, setValue] = useState(0);
-
-  const onIncrease = setValue((value) => value + 1);
-  const onDecrease = setValue((value) => value - 1);
-
-  return (
-    <div>
-      <button onClick={onIncrease}>{value}</button>
-    </div>
-  )
-}
-`,
+      doc: initialValue,
       parent: editorRef.current,
       extensions: [
         oneDark,
@@ -50,12 +40,16 @@ export const CodeEditor = ({ fileName }: CodeEditorProps) => {
         ]),
         minimap(),
         indentationMarkers(),
+        CodeMirrorEditorView.updateListener.of((update) => {
+          if (update.docChanged) onChange(update.state.doc.toString());
+        }),
       ],
     });
 
     viewRef.current = view;
 
     return () => view.destroy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialValue is only used for initial document
   }, [languageExtension]);
 
   return <div ref={editorRef} className='size-full bg-background pl-4' />;

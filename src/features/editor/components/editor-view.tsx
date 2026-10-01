@@ -1,7 +1,8 @@
+import { useRef } from 'react';
 import Image from 'next/image';
 
 import { useEditor } from '@/features/editor/hooks/use-editor';
-import { useFile } from '@/features/projects/hooks/use-files';
+import { useFile, useUpdateFile } from '@/features/projects/hooks/use-files';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 
@@ -16,6 +17,12 @@ interface EditorViewProps {
 export const EditorView = ({ projectId }: EditorViewProps) => {
   const { activeTabId } = useEditor(projectId as Id<'projects'>);
   const activeFile = useFile(activeTabId);
+  const updateFile = useUpdateFile();
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isActiveFileBinary = activeFile && activeFile.storageId;
+  const isActiveFileText = activeFile && !activeFile.storageId;
 
   return (
     <div className='flex h-full flex-col'>
@@ -38,7 +45,23 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
           </div>
         )}
 
-        {!!activeFile && <CodeEditor fileName={activeFile.name} />}
+        {isActiveFileText && (
+          <CodeEditor
+            key={activeFile._id}
+            fileName={activeFile.name}
+            initialValue={activeFile.content}
+            onChange={(content: string) => {
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+              timeoutRef.current = setTimeout(
+                () => updateFile({ id: activeFile._id, content }),
+                1500
+              );
+            }}
+          />
+        )}
+
+        {isActiveFileBinary && <p>Binary Preview</p>}
       </div>
     </div>
   );
