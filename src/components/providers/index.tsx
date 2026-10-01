@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { ClerkProvider } from '@clerk/nextjs';
 
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { ConvexClientProvider } from './convex-client-provider';
@@ -12,7 +13,11 @@ export const Providers = ({ children }: Readonly<React.PropsWithChildren>) => {
     <ClerkProvider afterSignOutUrl='/'>
       <ConvexClientProvider>
         <ThemeProvider attribute='class' defaultTheme='dark' enableSystem disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+
+            <Toaster richColors closeButton />
+          </TooltipProvider>
         </ThemeProvider>
       </ConvexClientProvider>
     </ClerkProvider>
