@@ -11,7 +11,7 @@ import {
 import { z } from 'zod';
 
 import { SUGGESTION_DEBOUNCE_MS } from '@/features/editor/constants';
-import { suggestionRequestSchema } from '@/features/editor/schemas';
+import { suggestionRequestSchema } from '@/features/editor/schemas/suggestion';
 
 import { fetcher } from './fetcher';
 

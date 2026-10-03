@@ -9,6 +9,7 @@ import { EditorView as CodeMirrorEditorView } from 'codemirror';
 import { customSetup } from '@/features/editor/extensions/custom-setup';
 import { getLanguageExtension } from '@/features/editor/extensions/language-extension';
 import { minimap } from '@/features/editor/extensions/minimap';
+import { quickEdit } from '@/features/editor/extensions/quick-edit';
 import { suggestion } from '@/features/editor/extensions/suggestion';
 import { customTheme } from '@/features/editor/extensions/theme';
 
@@ -36,6 +37,7 @@ export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditor
         customSetup,
         languageExtension,
         suggestion(fileName),
+        quickEdit(fileName),
         keymap.of([
           { key: 'Tab', run: insertTab },
           { key: 'Shift-Tab', run: indentLess },

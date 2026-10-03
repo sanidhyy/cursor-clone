@@ -4,11 +4,13 @@ import { openai } from '@ai-sdk/openai';
 import { auth } from '@clerk/nextjs/server';
 import { generateText, Output } from 'ai';
 
-import { suggestionRequestSchema, suggestionResponseSchema } from '@/features/editor/schemas';
+import {
+  suggestionRequestSchema,
+  suggestionResponseSchema,
+} from '@/features/editor/schemas/suggestion';
 
-import { MAX_OUTPUT_TOKENS } from '@/constants';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
-import { SUGGESTION_PROMPT, SUGGESTION_SYSTEM_PROMPT } from '@/constants/prompts';
+import { SUGGESTION_PROMPT } from '@/constants/prompts';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,10 +28,8 @@ export async function POST(req: NextRequest) {
     const prompt = SUGGESTION_PROMPT(validatedData);
 
     const { output } = await generateText({
-      model: openai('gpt-5.4-nano'),
-      system: SUGGESTION_SYSTEM_PROMPT,
+      model: openai('gpt-5.6-luna'),
       prompt,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
       output: Output.object({
         schema: suggestionResponseSchema,
       }),

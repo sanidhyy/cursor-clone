@@ -3,7 +3,10 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { SUGGESTION_API_TIMEOUT } from '@/features/editor/constants';
-import { suggestionRequestSchema, suggestionResponseSchema } from '@/features/editor/schemas';
+import {
+  suggestionRequestSchema,
+  suggestionResponseSchema,
+} from '@/features/editor/schemas/suggestion';
 
 type SuggestionRequest = z.infer<typeof suggestionRequestSchema>;
 type SuggestionResponse = z.infer<typeof suggestionResponseSchema>;
