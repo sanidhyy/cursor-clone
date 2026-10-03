@@ -1,14 +1,19 @@
 import { EditorState, StateEffect, StateField } from '@codemirror/state';
-import { EditorView as CodeMirrorEditorView, keymap, showTooltip, Tooltip } from '@codemirror/view';
+import {
+  EditorView as CodeMirrorEditorView,
+  keymap,
+  showTooltip,
+  type Tooltip,
+} from '@codemirror/view';
 
 import { fetcher } from './fetcher';
 
-const showQuickEditEffect = StateEffect.define<boolean | null>();
+export const showQuickEditEffect = StateEffect.define<boolean | null>();
 
 let editorView: CodeMirrorEditorView | null = null;
 let currentAbortController: AbortController | null = null;
 
-const quickEditState = StateField.define<boolean>({
+export const quickEditState = StateField.define<boolean>({
   create: () => false,
   update: (value, transaction) => {
     for (const effect of transaction.effects)
@@ -38,7 +43,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
       create: () => {
         const dom = document.createElement('div');
         dom.className =
-          'bg-popover text-popover-foreground z-50 rounded-sm border border-input p-2 rounded-md flex flex-col gap-2 text-sm';
+          'bg-popover text-popover-foreground z-50 border border-input p-2 rounded-md flex flex-col gap-2 text-sm';
 
         const form = document.createElement('form');
         form.className = 'flex flex-col gap-2';
