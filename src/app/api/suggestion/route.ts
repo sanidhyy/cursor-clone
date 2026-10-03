@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const prompt = SUGGESTION_PROMPT(validatedData);
 
     const { output } = await generateText({
-      model: openai('gpt-5.6-luna'),
+      model: openai('gpt-6-luna'),
       prompt,
       output: Output.object({
         schema: suggestionResponseSchema,

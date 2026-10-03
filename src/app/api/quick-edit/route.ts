@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     });
 
     const { output } = await generateText({
-      model: openai('gpt-5.6'),
+      model: openai('gpt-6-luna'),
       output: Output.object({ schema: quickEditResponseSchema }),
       prompt,
     });
