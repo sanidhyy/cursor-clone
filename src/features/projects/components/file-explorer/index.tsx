@@ -80,6 +80,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              title='New File...'
             >
               <FilePlusCornerIcon className='size-3.5' />
             </Button>
@@ -93,6 +94,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              title='New Folder...'
             >
               <FolderPlusIcon className='size-3.5' />
             </Button>
@@ -105,6 +107,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              title='Collapse Folders in Explorer'
             >
               <CopyMinusIcon className='size-3.5' />
             </Button>

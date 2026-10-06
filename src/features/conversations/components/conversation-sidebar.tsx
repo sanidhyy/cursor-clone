@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 import { ConversationMessage } from './conversation-message';
+import { PastConversationsDialog } from './past-conversations-dialog';
 
 interface ConversationSidebarProps {
   projectId: string;
@@ -40,6 +41,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   const [selectedConversationId, setSelectedConversationId] = useState<Id<'conversations'> | null>(
     null
   );
+  const [pastConversationsOpen, setPastConversationsOpen] = useState(false);
 
   const createConversation = useCreateConversation();
   const conversations = useConversations(projectId as Id<'projects'>);
@@ -106,59 +108,73 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   };
 
   return (
-    <div className='flex h-full flex-col bg-sidebar'>
-      <div className='flex h-8.75 items-center justify-between border-b'>
-        <div className='truncate pl-3 text-sm'>
-          {activeConversation?.title || DEFAULT_CONVERSATION_TITLE}
+    <>
+      <PastConversationsDialog
+        open={pastConversationsOpen}
+        onOpenChange={setPastConversationsOpen}
+        projectId={projectId as Id<'projects'>}
+        onSelect={setSelectedConversationId}
+      />
+
+      <div className='flex h-full flex-col bg-sidebar'>
+        <div className='flex h-8.75 items-center justify-between border-b'>
+          <div className='truncate pl-3 text-sm'>
+            {activeConversation?.title || DEFAULT_CONVERSATION_TITLE}
+          </div>
+
+          <div className='flex items-center gap-1 px-1'>
+            <Button
+              size='icon-xs'
+              variant='highlight'
+              title='Conversation History'
+              onClick={() => setPastConversationsOpen(true)}
+            >
+              <HistoryIcon className='size-3.5' />
+            </Button>
+
+            <Button
+              onClick={handleCreateConversation}
+              size='icon-xs'
+              variant='highlight'
+              title='New Conversation'
+            >
+              <PlusIcon className='size-3.5' />
+            </Button>
+          </div>
         </div>
 
-        <div className='flex items-center gap-1 px-1'>
-          <Button size='icon-xs' variant='highlight' title='History'>
-            <HistoryIcon className='size-3.5' />
-          </Button>
+        <Conversation className='flex-1'>
+          <ConversationContent>
+            {conversationMessages?.map((message) => (
+              <ConversationMessage key={message._id} data={message} />
+            ))}
+          </ConversationContent>
 
-          <Button
-            onClick={handleCreateConversation}
-            size='icon-xs'
-            variant='highlight'
-            title='New Conversation'
-          >
-            <PlusIcon className='size-3.5' />
-          </Button>
+          <ConversationScrollButton />
+        </Conversation>
+
+        <div className='p-3'>
+          <PromptInput onSubmit={handleSubmit} className='mt-2'>
+            <PromptInputBody>
+              <PromptInputTextarea
+                onChange={(e) => setInput(e.target.value)}
+                value={input}
+                disabled={isProcessing}
+                placeholder='Ask Polaris anything...'
+              />
+            </PromptInputBody>
+
+            <PromptInputFooter>
+              <PromptInputTools />
+
+              <PromptInputSubmit
+                disabled={isProcessing ? false : !input.trim()}
+                status={isProcessing ? 'streaming' : undefined}
+              />
+            </PromptInputFooter>
+          </PromptInput>
         </div>
       </div>
-
-      <Conversation className='flex-1'>
-        <ConversationContent>
-          {conversationMessages?.map((message) => (
-            <ConversationMessage key={message._id} data={message} />
-          ))}
-        </ConversationContent>
-
-        <ConversationScrollButton />
-      </Conversation>
-
-      <div className='p-3'>
-        <PromptInput onSubmit={handleSubmit} className='mt-2'>
-          <PromptInputBody>
-            <PromptInputTextarea
-              onChange={(e) => setInput(e.target.value)}
-              value={input}
-              disabled={isProcessing}
-              placeholder='Ask Polaris anything...'
-            />
-          </PromptInputBody>
-
-          <PromptInputFooter>
-            <PromptInputTools />
-
-            <PromptInputSubmit
-              disabled={isProcessing ? false : !input.trim()}
-              status={isProcessing ? 'streaming' : undefined}
-            />
-          </PromptInputFooter>
-        </PromptInput>
-      </div>
-    </div>
+    </>
   );
 };
