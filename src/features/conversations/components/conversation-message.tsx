@@ -43,6 +43,8 @@ export const ConversationMessage = ({ data: message }: ConversationMessageProps)
             <Spinner />
             <span>Thinking...</span>
           </div>
+        ) : message.status === 'cancelled' ? (
+          <span className='pr-px text-muted-foreground italic'>Request cancelled</span>
         ) : (
           <MessageResponse>{message.content}</MessageResponse>
         )}
@@ -50,7 +52,7 @@ export const ConversationMessage = ({ data: message }: ConversationMessageProps)
 
       {message.role === 'assistant' && message.status === 'completed' && (
         <MessageActions
-          className={cn('group-hover:opacity-100 md:opacity-0', copied && 'opacity-100')}
+          className={cn('group-hover:opacity-100 md:opacity-0', copied && 'md:opacity-100')}
         >
           <MessageAction
             onClick={handleCopy}

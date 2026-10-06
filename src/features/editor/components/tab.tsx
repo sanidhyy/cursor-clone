@@ -29,6 +29,9 @@ export const Tab = ({ fileId, isFirst, projectId }: TabProps) => {
       role='button'
       onClick={() => setActiveTab(fileId)}
       onDoubleClick={() => openFile(fileId, { pinned: true })}
+      onAuxClick={(e) => {
+        if (e.button === 1) closeTab(fileId);
+      }}
       className={cn(
         'group flex h-8.75 cursor-pointer items-center gap-2 border border-transparent pr-1.5 pl-2 text-muted-foreground hover:bg-accent/30',
         isActive &&

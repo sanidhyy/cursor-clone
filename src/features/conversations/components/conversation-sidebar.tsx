@@ -66,9 +66,21 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      await ky.post('/api/messages/cancel', {
+        json: {
+          projectId,
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to cancel request');
+    }
+  };
+
   const handleSubmit = async (message: PromptInputMessage) => {
     if (isProcessing && !message.text) {
-      // TODO: await handleClick()
+      await handleCancel();
       setInput('');
       return;
     }

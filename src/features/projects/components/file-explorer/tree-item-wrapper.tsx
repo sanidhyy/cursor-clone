@@ -43,6 +43,9 @@ export const TreeItemWrapper = ({
       <ContextMenuTrigger
         onClick={onClick}
         onDoubleClick={onDoubleClick}
+        onAuxClick={(e) => {
+          if (e.button === 1) onDoubleClick?.();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();

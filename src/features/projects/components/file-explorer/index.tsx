@@ -70,7 +70,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
 
           <p className='line-clamp-1 text-xs uppercase'>{project?.name || 'Loading...'}</p>
 
-          <div className='ml-auto flex items-center gap-0.5 opacity-0 transition-none duration-0 group-hover/project:opacity-100'>
+          <div className='ml-auto flex items-center gap-0.5 opacity-100 transition-none duration-0 group-hover/project:opacity-100 md:opacity-0'>
             <Button
               onClick={(e) => {
                 e.preventDefault();

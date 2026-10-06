@@ -1,5 +1,4 @@
 import ky from 'ky';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { SUGGESTION_API_TIMEOUT } from '@/features/editor/constants';
@@ -36,10 +35,7 @@ export const fetcher = async (
     if (!validatedResponse || !validatedResponseSuccess) throw new Error('Invalid Response');
 
     return validatedResponse.suggestion || null;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') return null;
-
-    toast.error(error instanceof Error ? error.message : 'Failed to fetch AI completion');
+  } catch {
     return null;
   }
 };

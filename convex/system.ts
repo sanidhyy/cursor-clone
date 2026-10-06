@@ -62,3 +62,35 @@ export const updateMessageContent = mutation({
     await db.patch('messages', messageId, { content, status: 'completed' });
   },
 });
+
+export const updateMessageStatus = mutation({
+  args: {
+    internalKey: v.string(),
+    messageId: v.id('messages'),
+    status: v.union(v.literal('processing'), v.literal('completed'), v.literal('cancelled')),
+  },
+  handler: async ({ db }, { internalKey, messageId, status }) => {
+    validateInternalKey(internalKey);
+
+    await db.patch('messages', messageId, { status });
+  },
+});
+
+export const processingMessages = query({
+  args: {
+    internalKey: v.string(),
+    projectId: v.id('projects'),
+  },
+  handler: async ({ db }, { internalKey, projectId }) => {
+    validateInternalKey(internalKey);
+
+    const messages = await db
+      .query('messages')
+      .withIndex('by_project_status', (q) =>
+        q.eq('projectId', projectId).eq('status', 'processing')
+      )
+      .collect();
+
+    return messages;
+  },
+});
