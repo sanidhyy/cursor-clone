@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
+import { ConversationSidebar } from '@/features/conversations/components/conversation-sidebar';
 import { Navbar } from '@/features/projects/components/navbar';
 import {
   DEFAULT_CONVERSATION_SIDEBAR_WIDTH,
@@ -33,7 +34,7 @@ export const ProjectIdLayoutView = ({ children, projectId }: ProjectIdLayoutView
             maxSize={MAX_SIDEBAR_WIDTH}
             preferredSize={DEFAULT_CONVERSATION_SIDEBAR_WIDTH}
           >
-            <div>Conversation Sidebar</div>
+            <ConversationSidebar projectId={projectId} />
           </Allotment.Pane>
 
           <Allotment.Pane>{children}</Allotment.Pane>

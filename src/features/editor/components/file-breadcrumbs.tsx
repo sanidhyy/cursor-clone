@@ -5,7 +5,7 @@ import { FileIcon } from '@react-symbols/icons/utils';
 import { useEditor } from '@/features/editor/hooks/use-editor';
 import { useFilePath } from '@/features/projects/hooks/use-files';
 
-import { Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 import {
   Breadcrumb,
   BreadcrumbItem,

@@ -1,9 +1,10 @@
 import { serve } from 'inngest/next';
 
+import { processMessage } from '@/features/conversations/inngest/process-message';
+
 import { inngest } from '@/inngest/client';
-import { processTask } from '@/inngest/functions';
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [processTask],
+  functions: [processMessage],
 });
