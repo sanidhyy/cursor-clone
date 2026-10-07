@@ -55,6 +55,7 @@ export const PastConversationsDialog = ({
                 key={conversation._id}
                 value={`${conversation.title}-${conversation._id}`}
                 onSelect={() => handleSelect(conversation._id)}
+                className='border border-transparent data-selected:border-input/30 data-selected:bg-input/30'
               >
                 <div className='flex flex-col gap-0.5'>
                   <span>{conversation.title}</span>
