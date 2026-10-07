@@ -4,6 +4,7 @@ import ky from 'ky';
 import { HistoryIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { DEFAULT_CONVERSATION_TITLE } from '@/features/conversations/constants';
 import {
   useConversation,
   useConversations,
@@ -12,7 +13,6 @@ import {
 } from '@/features/conversations/hooks/use-conversations';
 
 import type { Id } from '@/../convex/_generated/dataModel';
-import { DEFAULT_CONVERSATION_TITLE } from '@/../convex/constants';
 import {
   Conversation,
   ConversationContent,

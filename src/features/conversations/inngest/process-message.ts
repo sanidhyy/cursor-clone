@@ -7,6 +7,9 @@ import { inngest } from '@/inngest/client';
 
 interface MessageEvent {
   messageId: Id<'messages'>;
+  conversationId: Id<'conversations'>;
+  projectId: Id<'projects'>;
+  message: string;
 }
 
 export const processMessage = inngest.createFunction(
