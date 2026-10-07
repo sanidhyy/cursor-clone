@@ -60,8 +60,7 @@ export const getFolderContents = query({
     // sort: folders first, then files, alphabetically within each group
     const sortedFiles = files.sort((a, b) => {
       // folders come before files
-      if (a.type === 'folder' && b.type === 'file') return -1;
-      if (a.type === 'file' && b.type === 'folder') return 1;
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
 
       // within same type, sort alphabetically by name
       return a.name.localeCompare(b.name);

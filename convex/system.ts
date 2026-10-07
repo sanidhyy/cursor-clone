@@ -135,7 +135,7 @@ export const updateConversationTitle = mutation({
   },
 });
 
-export const getProjectFiles = mutation({
+export const getProjectFiles = query({
   args: {
     internalKey: v.string(),
     projectId: v.id('projects'),

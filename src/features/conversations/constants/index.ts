@@ -1,2 +1,7 @@
 export const DEFAULT_CONVERSATION_TITLE = 'New Conversation';
 export const LAST_RECENT_MESSAGES = 10;
+
+export const MAX_TITLE_AGENT_COMPLETION_TOKENS = 50;
+export const MAX_CODING_AGENT_COMPLETION_TOKENS = 16_000;
+
+export const MAX_AGENT_NETWORK_ITERATIONS = 20;

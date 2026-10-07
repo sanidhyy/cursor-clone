@@ -1,10 +1,15 @@
-import { createAgent, openai } from '@inngest/agent-kit';
+import { createAgent, createNetwork, openai } from '@inngest/agent-kit';
 import { NonRetriableError } from 'inngest';
 
 import {
   DEFAULT_CONVERSATION_TITLE,
   LAST_RECENT_MESSAGES,
+  MAX_AGENT_NETWORK_ITERATIONS,
+  MAX_CODING_AGENT_COMPLETION_TOKENS,
+  MAX_TITLE_AGENT_COMPLETION_TOKENS,
 } from '@/features/conversations/constants';
+import { createListFilesTool } from '@/features/conversations/inngest/tools/list-files';
+import { createReadFilesTool } from '@/features/conversations/inngest/tools/read-files';
 import { convex } from '@/features/projects/lib/convex-client';
 
 import { api } from '@/../convex/_generated/api';
@@ -90,7 +95,7 @@ export const processMessage = inngest.createFunction(
         system: TITLE_GENERATOR_SYSTEM_PROMPT,
         model: openai({
           model: 'gpt-6-luna',
-          defaultParameters: { max_completion_tokens: 50 },
+          defaultParameters: { max_completion_tokens: MAX_TITLE_AGENT_COMPLETION_TOKENS },
         }),
       });
 
@@ -121,12 +126,61 @@ export const processMessage = inngest.createFunction(
       }
     }
 
+    const codingAgent = createAgent({
+      name: 'polaris',
+      description: 'An expert AI coding assistant',
+      system: systemPrompt,
+      model: openai({
+        // TODO: fix gpt 6 astra not working
+        model: 'gpt-5',
+        defaultParameters: { max_completion_tokens: MAX_CODING_AGENT_COMPLETION_TOKENS },
+      }),
+      tools: [
+        createListFilesTool({ internalKey, projectId }),
+        createReadFilesTool({ internalKey }),
+      ],
+    });
+
+    const network = createNetwork({
+      name: 'polaris-network',
+      agents: [codingAgent],
+      maxIter: MAX_AGENT_NETWORK_ITERATIONS,
+      router: ({ network }) => {
+        const lastResult = network.state.results.at(-1);
+        const hasTextResponse = lastResult?.output.some(
+          (message) => message.type === 'text' && message.role === 'assistant'
+        );
+        const hasToolCalls = lastResult?.output.some((message) => message.type === 'tool_call');
+
+        if (hasTextResponse && !hasToolCalls) return undefined;
+        return codingAgent;
+      },
+    });
+
+    const result = await network.run(message);
+
+    const lastResult = result.state.results.at(-1);
+    const textMessage = lastResult?.output.find(
+      (message) => message.type === 'text' && message.role === 'assistant'
+    );
+
+    let assistantResponse = 'I processed your request. Let me know if you need anything else!';
+
+    if (textMessage?.type === 'text') {
+      assistantResponse =
+        typeof textMessage.content === 'string'
+          ? textMessage.content
+          : textMessage.content.map((c) => c.text).join('');
+    }
+
     await step.run('update-assistant-message', async () => {
       await convex.mutation(api.system.updateMessageContent, {
         internalKey,
         messageId,
-        content: 'AI processed this message',
+        content: assistantResponse,
       });
     });
+
+    return { messageId, conversationId };
   }
 );
