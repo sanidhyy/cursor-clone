@@ -8,8 +8,14 @@ import {
   MAX_CODING_AGENT_COMPLETION_TOKENS,
   MAX_TITLE_AGENT_COMPLETION_TOKENS,
 } from '@/features/conversations/constants';
+import { createCreateFilesTool } from '@/features/conversations/inngest/tools/create-files';
+import { createCreateFolderTool } from '@/features/conversations/inngest/tools/create-folder';
+import { createDeleteFilesTool } from '@/features/conversations/inngest/tools/delete-files';
 import { createListFilesTool } from '@/features/conversations/inngest/tools/list-files';
 import { createReadFilesTool } from '@/features/conversations/inngest/tools/read-files';
+import { createRenameFileTool } from '@/features/conversations/inngest/tools/rename-file';
+import { createScrapeUrlsTool } from '@/features/conversations/inngest/tools/scrape-urls';
+import { createUpdateFileTool } from '@/features/conversations/inngest/tools/update-file';
 import { convex } from '@/features/projects/lib/convex-client';
 
 import { api } from '@/../convex/_generated/api';
@@ -138,6 +144,12 @@ export const processMessage = inngest.createFunction(
       tools: [
         createListFilesTool({ internalKey, projectId }),
         createReadFilesTool({ internalKey }),
+        createUpdateFileTool({ internalKey }),
+        createCreateFilesTool({ internalKey, projectId }),
+        createCreateFolderTool({ internalKey, projectId }),
+        createRenameFileTool({ internalKey }),
+        createDeleteFilesTool({ internalKey }),
+        createScrapeUrlsTool(),
       ],
     });
 

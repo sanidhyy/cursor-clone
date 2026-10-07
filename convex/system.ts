@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 
 import { LAST_RECENT_MESSAGES } from '@/features/conversations/constants';
 
-import { Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 
 const validateInternalKey = (key: string) => {
