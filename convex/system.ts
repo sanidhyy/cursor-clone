@@ -1,5 +1,7 @@
 import { v } from 'convex/values';
 
+import { LAST_RECENT_MESSAGES } from '@/features/conversations/constants';
+
 import { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 
@@ -102,7 +104,7 @@ export const getRecentMessages = query({
     conversationId: v.id('conversations'),
     limit: v.optional(v.number()),
   },
-  handler: async ({ db }, { internalKey, conversationId, limit = 10 }) => {
+  handler: async ({ db }, { internalKey, conversationId, limit = LAST_RECENT_MESSAGES }) => {
     validateInternalKey(internalKey);
 
     const messages = await db
