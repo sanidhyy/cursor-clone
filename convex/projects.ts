@@ -21,6 +21,27 @@ export const create = mutation({
   },
 });
 
+export const updateSettings = mutation({
+  args: {
+    id: v.id('projects'),
+    settings: v.object({
+      installCommand: v.optional(v.string()),
+      devCommand: v.optional(v.string()),
+    }),
+  },
+  handler: async ({ auth, db }, { id: projectId, settings }) => {
+    const user = await verifyAuth(auth);
+
+    const project = await db.get('projects', projectId);
+    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+
+    await db.patch('projects', projectId, {
+      settings,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const get = query({
   args: {
     limit: v.optional(v.number()),
