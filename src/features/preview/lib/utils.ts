@@ -7,7 +7,7 @@ type FileDoc = Doc<'files'>;
 /*
  * Convert flat Convex files to nested FileSystemTree for WebContainer
  */
-export const buildTreeFile = (files: FileDoc[]): FileSystemTree => {
+export const buildFileTree = (files: FileDoc[]): FileSystemTree => {
   const tree: FileSystemTree = {};
   const filesMap = new Map(files.map((file) => [file._id, file]));
 

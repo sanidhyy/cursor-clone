@@ -6,21 +6,23 @@ import '@/env/server';
 const nextConfig: NextConfig = {
   agentRules: false,
   devIndicators: false,
-  headers: async () => [
-    {
-      source: '/:path*',
-      headers: [
-        {
-          key: 'Cross-0rigin-Embedder-Policy',
-          value: 'credentialless',
-        },
-        {
-          key: 'Cross-Origin-Opener-Policy',
-          value: 'same-origin',
-        },
-      ],
-    },
-  ],
+  headers: () => {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+    ];
+  },
   images: {
     unoptimized: true,
   },

@@ -17,6 +17,8 @@ import {
 } from '@/features/projects/constants';
 import type { View } from '@/features/projects/types';
 
+import { PreviewView } from './preview-view';
+
 interface ProjectIdViewProps {
   projectId: string;
 }
@@ -65,7 +67,7 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
         </div>
 
         <div className={cn('invisible absolute inset-0', activeView === 'preview' && 'visible')}>
-          <div>Preview</div>
+          <PreviewView projectId={projectId} />
         </div>
       </div>
     </div>
