@@ -107,6 +107,7 @@ export const useAudioDevices = () => {
   }, [loading]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDevicesWithoutPermission();
   }, [loadDevicesWithoutPermission]);
 

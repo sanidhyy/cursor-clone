@@ -119,6 +119,7 @@ export const CommitTimestamp = ({ date, className, children, ...props }: CommitT
   }, [date]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updateFormatted();
   }, [updateFormatted]);
 

@@ -73,7 +73,7 @@ export const QueueItemContent = ({
 }: QueueItemContentProps) => (
   <span
     className={cn(
-      'line-clamp-1 grow break-words',
+      'line-clamp-1 grow wrap-break-word',
       completed ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground',
       className
     )}
@@ -130,9 +130,10 @@ export const QueueItemAttachment = ({ className, ...props }: QueueItemAttachment
 export type QueueItemImageProps = ComponentProps<'img'>;
 
 export const QueueItemImage = ({ className, ...props }: QueueItemImageProps) => (
+  // eslint-disable-next-line @next/next/no-img-element
   <img
     alt=''
-    className={cn('h-8 w-8 rounded border object-cover', className)}
+    className={cn('size-8 rounded border object-cover', className)}
     height={32}
     width={32}
     {...props}
@@ -147,7 +148,7 @@ export const QueueItemFile = ({ children, className, ...props }: QueueItemFilePr
     {...props}
   >
     <PaperclipIcon size={12} />
-    <span className='max-w-[100px] truncate'>{children}</span>
+    <span className='max-w-25 truncate'>{children}</span>
   </span>
 );
 
@@ -227,7 +228,7 @@ export type QueueProps = ComponentProps<'div'>;
 export const Queue = ({ className, ...props }: QueueProps) => (
   <div
     className={cn(
-      'flex flex-col gap-2 rounded-xl border border-border bg-background px-3 pt-2 pb-2 shadow-xs',
+      'flex flex-col gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-xs',
       className
     )}
     {...props}

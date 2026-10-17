@@ -12,6 +12,7 @@ import type {
   PropsWithChildren,
   ReactNode,
   RefObject,
+  SyntheticEvent,
 } from 'react';
 import {
   Children,
@@ -24,6 +25,7 @@ import {
   useState,
 } from 'react';
 
+import { BaseUIEvent } from '@base-ui/react';
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from 'ai';
 import { CornerDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from 'lucide-react';
 import { nanoid } from 'nanoid';
@@ -391,7 +393,7 @@ export const PromptInputActionAddAttachments = ({
   const attachments = usePromptInputAttachments();
 
   const handleSelect = useCallback(
-    (e: Event) => {
+    (e: BaseUIEvent<SyntheticEvent<HTMLDivElement, Event>>) => {
       e.preventDefault();
       attachments.openFileDialog();
     },
@@ -417,7 +419,7 @@ export const PromptInputActionAddScreenshot = ({
   const attachments = usePromptInputAttachments();
 
   const handleSelect = useCallback(
-    async (event: Event) => {
+    async (event: BaseUIEvent<SyntheticEvent<HTMLDivElement, Event>>) => {
       onSelect?.(event);
       if (event.defaultPrevented) {
         return;
@@ -1140,7 +1142,7 @@ export const PromptInputSubmit = ({
   }
 
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e: BaseUIEvent<React.MouseEvent<HTMLButtonElement, MouseEvent>>) => {
       if (isGenerating && onStop) {
         e.preventDefault();
         onStop();
@@ -1207,12 +1209,8 @@ export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelec
 
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
 
-export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
+export const PromptInputHoverCard = ({ ...props }: PromptInputHoverCardProps) => (
+  <HoverCard {...props} />
 );
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>;

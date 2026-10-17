@@ -126,9 +126,9 @@ export const PlanTrigger = ({ className, ...props }: PlanTriggerProps) => (
         data-slot='plan-trigger'
         size='icon'
         variant='ghost'
-        {...props}
       />
     }
+    {...props}
   >
     <ChevronsUpDownIcon className='size-4' />
     <span className='sr-only'>Toggle plan</span>

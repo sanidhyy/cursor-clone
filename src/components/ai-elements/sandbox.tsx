@@ -62,10 +62,7 @@ export const SandboxTabs = ({ className, ...props }: SandboxTabsProps) => (
 export type SandboxTabsBarProps = ComponentProps<'div'>;
 
 export const SandboxTabsBar = ({ className, ...props }: SandboxTabsBarProps) => (
-  <div
-    className={cn('flex w-full items-center border-t border-b border-border', className)}
-    {...props}
-  />
+  <div className={cn('flex w-full items-center border-y border-border', className)} {...props} />
 );
 
 export type SandboxTabsListProps = ComponentProps<typeof TabsList>;

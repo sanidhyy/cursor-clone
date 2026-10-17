@@ -48,7 +48,7 @@ export const Context = ({ usedTokens, maxTokens, usage, modelId, ...props }: Con
 
   return (
     <ContextContext.Provider value={contextValue}>
-      <HoverCard closeDelay={0} openDelay={0} {...props} />
+      <HoverCard {...props} />
     </ContextContext.Provider>
   );
 };
@@ -294,7 +294,7 @@ export const ContextReasoningUsage = ({
   ...props
 }: ContextReasoningUsageProps) => {
   const { usage, modelId } = useContextValue();
-  const reasoningTokens = usage?.reasoningTokens ?? 0;
+  const reasoningTokens = usage?.outputTokenDetails.reasoningTokens ?? 0;
 
   if (children) {
     return children;
@@ -327,7 +327,9 @@ export type ContextCacheUsageProps = ComponentProps<'div'>;
 
 export const ContextCacheUsage = ({ className, children, ...props }: ContextCacheUsageProps) => {
   const { usage, modelId } = useContextValue();
-  const cacheTokens = usage?.cachedInputTokens ?? 0;
+  const cacheTokens =
+    (usage?.inputTokenDetails.cacheReadTokens || 0) +
+    (usage?.inputTokenDetails.cacheWriteTokens || 0);
 
   if (children) {
     return children;

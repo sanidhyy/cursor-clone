@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 'use client';
 
 import type { ComponentProps } from 'react';
@@ -155,6 +156,7 @@ export const SpeechInput = ({
     speechRecognition.addEventListener('error', handleError);
 
     recognitionRef.current = speechRecognition;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsRecognitionReady(true);
 
     return () => {
