@@ -3,7 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
+import {
+  BAD_REQUEST,
+  INTERNAL_SERVER_ERROR,
+  PAYMENT_REQUIRED,
+  UNAUTHORIZED,
+} from '@/constants/http-status-codes';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
 
@@ -16,8 +21,15 @@ const requestSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, has } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
+
+    const hasPro = has({ plan: 'pro' });
+    if (!hasPro)
+      return NextResponse.json(
+        { error: 'Pro plan required. Upgrade to export repositories.' },
+        { status: PAYMENT_REQUIRED }
+      );
 
     const body = await req.json();
     const { data, error } = requestSchema.safeParse(body);

@@ -84,7 +84,15 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
                   label: 'Connect',
                   onClick: () => openUserProfile(),
                 }
-              : undefined,
+              : body?.error?.includes('Pro plan required')
+                ? {
+                    label: 'Upgrade Now',
+                    onClick: () =>
+                      openUserProfile({
+                        __experimental_startPath: '/billing',
+                      }),
+                  }
+                : undefined,
           });
 
           setOpen(false);
