@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
-import { convex } from '@/features/projects/lib/convex-client';
-
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
 import {
@@ -15,6 +13,7 @@ import {
 } from '@/constants/http-status-codes';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
+import { convex } from '@/lib/convex-client';
 
 const requestSchema = z.object({
   conversationId: z.string().trim().min(1),

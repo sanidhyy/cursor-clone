@@ -3,13 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
-import { convex } from '@/features/projects/lib/convex-client';
-
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
+import { convex } from '@/lib/convex-client';
 
 const requestSchema = z.object({
   projectId: z.string().trim().min(1),

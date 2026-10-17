@@ -16,13 +16,13 @@ import { createReadFilesTool } from '@/features/conversations/inngest/tools/read
 import { createRenameFileTool } from '@/features/conversations/inngest/tools/rename-file';
 import { createScrapeUrlsTool } from '@/features/conversations/inngest/tools/scrape-urls';
 import { createUpdateFileTool } from '@/features/conversations/inngest/tools/update-file';
-import { convex } from '@/features/projects/lib/convex-client';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
 import { CODING_AGENT_SYSTEM_PROMPT, TITLE_GENERATOR_SYSTEM_PROMPT } from '@/constants/prompts';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
+import { convex } from '@/lib/convex-client';
 
 interface MessageEvent {
   messageId: Id<'messages'>;

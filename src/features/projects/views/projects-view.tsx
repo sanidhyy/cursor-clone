@@ -9,6 +9,7 @@ import { SparkleIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
+import { ImportGitHubDialog } from '@/features/projects/components/import-github-dialog';
 import { ProjectsCommandDialog } from '@/features/projects/components/projects-command-dialog';
 import { ProjectsList } from '@/features/projects/components/projects-list';
 import { useCreateProject } from '@/features/projects/hooks/use-projects';
@@ -23,6 +24,7 @@ const poppins = Poppins({
 
 export const ProjectsView = () => {
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const createProject = useCreateProject();
 
@@ -35,6 +37,11 @@ export const ProjectsView = () => {
           e.preventDefault();
           setCommandDialogOpen((prevCommandDialogOpen) => !prevCommandDialogOpen);
         }
+
+        if (e.key.toLowerCase() === 'i') {
+          e.preventDefault();
+          setImportDialogOpen((prevImportDialogOpen) => !prevImportDialogOpen);
+        }
       }
     };
 
@@ -46,6 +53,7 @@ export const ProjectsView = () => {
   return (
     <>
       <ProjectsCommandDialog open={commandDialogOpen} onOpenChange={setCommandDialogOpen} />
+      <ImportGitHubDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
 
       <div className='flex min-h-screen flex-col items-center justify-center bg-sidebar p-6 md:p-16'>
         <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-4'>
@@ -91,7 +99,7 @@ export const ProjectsView = () => {
 
               <Button
                 variant='outline'
-                onClick={() => {}}
+                onClick={() => setImportDialogOpen(true)}
                 className='flex h-full flex-col items-start justify-start gap-6 rounded-none border bg-background p-4'
               >
                 <div className='flex w-full items-center justify-between'>

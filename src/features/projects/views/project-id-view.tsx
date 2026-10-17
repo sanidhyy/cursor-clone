@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 import { Allotment } from 'allotment';
 import { cn } from 'cn';
-import { FaGithub } from 'react-icons/fa';
 
 import { EditorView } from '@/features/editor/components/editor-view';
+import { ExportGitHubPopover } from '@/features/projects/components/export-github-popover';
 import { FileExplorer } from '@/features/projects/components/file-explorer';
 import { Tab } from '@/features/projects/components/tab';
 import {
@@ -41,10 +41,7 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
         />
 
         <div className='flex h-full flex-1 justify-end'>
-          <div className='flex h-full cursor-pointer items-center gap-1.5 border-l px-3 text-muted-foreground hover:bg-accent/30'>
-            <FaGithub className='size-3.5' />
-            <span className='text-sm'>Export</span>
-          </div>
+          <ExportGitHubPopover projectId={projectId} />
         </div>
       </nav>
 
