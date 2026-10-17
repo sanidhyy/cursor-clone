@@ -48,7 +48,6 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
           })
           .json<{ eventId: string; projectId: Id<'projects'> }>();
 
-        toast.success('Importing repository...');
         onOpenChange(false);
         form.reset();
 
@@ -57,7 +56,7 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
         if (error instanceof HTTPError) {
           const body = error.data as { error?: string } | undefined;
 
-          toast.error(body?.error || 'Failed to import GitHub repository.', {
+          toast.error(body?.error || 'Failed to import GitHub repository', {
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
@@ -70,7 +69,7 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
           return;
         }
 
-        toast.error(error instanceof Error ? error.message : 'Failed to import GitHub repository.');
+        toast.error(error instanceof Error ? error.message : 'Failed to import GitHub repository');
       }
     },
   });

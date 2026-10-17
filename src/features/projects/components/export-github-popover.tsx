@@ -78,7 +78,7 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
         if (error instanceof HTTPError) {
           const body = error.data as { error?: string } | undefined;
 
-          toast.error(body?.error || 'Failed to export GitHub repository.', {
+          toast.error(body?.error || 'Failed to export GitHub repository', {
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
@@ -91,7 +91,7 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
           return;
         }
 
-        toast.error(error instanceof Error ? error.message : 'Failed to export GitHub repository.');
+        toast.error(error instanceof Error ? error.message : 'Failed to export GitHub repository');
       }
     },
   });

@@ -7,12 +7,11 @@ import Image from 'next/image';
 import { cn } from 'cn';
 import { SparkleIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
-import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator';
 
 import { ImportGitHubDialog } from '@/features/projects/components/import-github-dialog';
+import { NewProjectDialog } from '@/features/projects/components/new-project-dialog';
 import { ProjectsCommandDialog } from '@/features/projects/components/projects-command-dialog';
 import { ProjectsList } from '@/features/projects/components/projects-list';
-import { useCreateProject } from '@/features/projects/hooks/use-projects';
 
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
@@ -25,8 +24,13 @@ const poppins = Poppins({
 export const ProjectsView = () => {
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
 
-  const createProject = useCreateProject();
+  const closeAllDialogs = () => {
+    setCommandDialogOpen(false);
+    setImportDialogOpen(false);
+    setNewProjectDialogOpen(false);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,12 +39,20 @@ export const ProjectsView = () => {
       if (e.metaKey || e.ctrlKey) {
         if (e.key.toLowerCase() === 'k') {
           e.preventDefault();
+          closeAllDialogs();
           setCommandDialogOpen((prevCommandDialogOpen) => !prevCommandDialogOpen);
         }
 
         if (e.key.toLowerCase() === 'i') {
           e.preventDefault();
+          closeAllDialogs();
           setImportDialogOpen((prevImportDialogOpen) => !prevImportDialogOpen);
+        }
+
+        if (e.key.toLowerCase() === 'j') {
+          e.preventDefault();
+          closeAllDialogs();
+          setNewProjectDialogOpen((prevNewProjectDialogOpen) => !prevNewProjectDialogOpen);
         }
       }
     };
@@ -54,6 +66,7 @@ export const ProjectsView = () => {
     <>
       <ProjectsCommandDialog open={commandDialogOpen} onOpenChange={setCommandDialogOpen} />
       <ImportGitHubDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <NewProjectDialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen} />
 
       <div className='flex min-h-screen flex-col items-center justify-center bg-sidebar p-6 md:p-16'>
         <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-4'>
@@ -77,15 +90,8 @@ export const ProjectsView = () => {
               <Button
                 variant='outline'
                 onClick={() => {
-                  const projectName = uniqueNamesGenerator({
-                    dictionaries: [adjectives, animals, colors],
-                    separator: '-',
-                    length: 3,
-                  });
-
-                  createProject({
-                    name: projectName,
-                  });
+                  closeAllDialogs();
+                  setNewProjectDialogOpen(true);
                 }}
                 className='flex h-full flex-col items-start justify-start gap-6 rounded-none border bg-background p-4'
               >
@@ -99,7 +105,10 @@ export const ProjectsView = () => {
 
               <Button
                 variant='outline'
-                onClick={() => setImportDialogOpen(true)}
+                onClick={() => {
+                  closeAllDialogs();
+                  setImportDialogOpen(true);
+                }}
                 className='flex h-full flex-col items-start justify-start gap-6 rounded-none border bg-background p-4'
               >
                 <div className='flex w-full items-center justify-between'>
@@ -111,7 +120,12 @@ export const ProjectsView = () => {
               </Button>
             </div>
 
-            <ProjectsList onViewAll={() => setCommandDialogOpen(true)} />
+            <ProjectsList
+              onViewAll={() => {
+                closeAllDialogs();
+                setCommandDialogOpen(true);
+              }}
+            />
           </div>
         </div>
       </div>
