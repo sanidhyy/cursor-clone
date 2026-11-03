@@ -19,9 +19,7 @@ export const generateMetadata = async ({
       internalKey: env.POLARIS_CONVEX_INTERNAL_KEY,
     });
     if (!!projectName) title = projectName;
-  } catch (error) {
-    if (error instanceof Error) title = error.message;
-  }
+  } catch {}
 
   return {
     title,
