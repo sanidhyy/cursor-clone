@@ -21,40 +21,26 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
 });
 
-export const ProjectsView = () => {
-  const [commandDialogOpen, setCommandDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+type Dialog = 'command' | 'import' | 'newProject';
 
-  const closeAllDialogs = () => {
-    setCommandDialogOpen(false);
-    setImportDialogOpen(false);
-    setNewProjectDialogOpen(false);
-  };
+export const ProjectsView = () => {
+  const [activeDialog, setActiveDialog] = useState<Dialog | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
+      if (e.repeat || (!e.metaKey && !e.ctrlKey)) return;
 
-      if (e.metaKey || e.ctrlKey) {
-        if (e.key.toLowerCase() === 'k') {
-          e.preventDefault();
-          closeAllDialogs();
-          setCommandDialogOpen((prevCommandDialogOpen) => !prevCommandDialogOpen);
-        }
+      const shortcuts: Record<string, Dialog> = {
+        k: 'command',
+        i: 'import',
+        j: 'newProject',
+      };
 
-        if (e.key.toLowerCase() === 'i') {
-          e.preventDefault();
-          closeAllDialogs();
-          setImportDialogOpen((prevImportDialogOpen) => !prevImportDialogOpen);
-        }
+      const dialog = shortcuts[e.key.toLowerCase()];
+      if (!dialog) return;
 
-        if (e.key.toLowerCase() === 'j') {
-          e.preventDefault();
-          closeAllDialogs();
-          setNewProjectDialogOpen((prevNewProjectDialogOpen) => !prevNewProjectDialogOpen);
-        }
-      }
+      e.preventDefault();
+      setActiveDialog((prev) => (prev === dialog ? null : dialog));
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -64,9 +50,24 @@ export const ProjectsView = () => {
 
   return (
     <>
-      <ProjectsCommandDialog open={commandDialogOpen} onOpenChange={setCommandDialogOpen} />
-      <ImportGitHubDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
-      <NewProjectDialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen} />
+      <ProjectsCommandDialog
+        open={activeDialog === 'command'}
+        onOpenChange={(open) =>
+          setActiveDialog((prev) => (open ? 'command' : prev === 'command' ? null : prev))
+        }
+      />
+      <ImportGitHubDialog
+        open={activeDialog === 'import'}
+        onOpenChange={(open) =>
+          setActiveDialog((prev) => (open ? 'import' : prev === 'import' ? null : prev))
+        }
+      />
+      <NewProjectDialog
+        open={activeDialog === 'newProject'}
+        onOpenChange={(open) =>
+          setActiveDialog((prev) => (open ? 'newProject' : prev === 'newProject' ? null : prev))
+        }
+      />
 
       <div className='flex min-h-screen flex-col items-center justify-center bg-sidebar p-6 md:p-16'>
         <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-4'>
@@ -79,6 +80,7 @@ export const ProjectsView = () => {
                 width={46}
                 className='size-8 md:size-11.5'
               />
+
               <h1 className={cn('text-4xl font-semibold md:text-5xl', poppins.className)}>
                 Polaris
               </h1>
@@ -90,8 +92,7 @@ export const ProjectsView = () => {
               <Button
                 variant='outline'
                 onClick={() => {
-                  closeAllDialogs();
-                  setNewProjectDialogOpen(true);
+                  setActiveDialog('newProject');
                 }}
                 className='flex h-full flex-col items-start justify-start gap-6 rounded-none border bg-background p-4'
               >
@@ -106,8 +107,7 @@ export const ProjectsView = () => {
               <Button
                 variant='outline'
                 onClick={() => {
-                  closeAllDialogs();
-                  setImportDialogOpen(true);
+                  setActiveDialog('import');
                 }}
                 className='flex h-full flex-col items-start justify-start gap-6 rounded-none border bg-background p-4'
               >
@@ -122,8 +122,7 @@ export const ProjectsView = () => {
 
             <ProjectsList
               onViewAll={() => {
-                closeAllDialogs();
-                setCommandDialogOpen(true);
+                setActiveDialog('command');
               }}
             />
           </div>
