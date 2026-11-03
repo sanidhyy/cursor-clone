@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import { cn } from 'cn';
 import { CloudCheckIcon } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
 
 import { useProject, useRenameProject } from '@/features/projects/hooks/use-projects';
 
@@ -21,6 +22,7 @@ import {
 import { buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { LINKS } from '@/config';
 import { formatTimestamp } from '@/lib/utils';
 
 const poppins = Poppins({
@@ -129,7 +131,16 @@ export const Navbar = ({ projectId }: NavbarProps) => {
           ))}
       </div>
 
-      <div className='flex items-center gap-2'>
+      <div className='flex items-center gap-3'>
+        <Link
+          href={LINKS.SOURCE_CODE}
+          target='_blank'
+          rel='noopener noreferrer'
+          title='Source Code'
+        >
+          <FaGithub className='size-6' />
+        </Link>
+
         <UserButton />
       </div>
     </nav>

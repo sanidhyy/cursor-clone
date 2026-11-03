@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const LINKS = {
-  SOURCE_CODE: 'https://github.com/sanidhyy/lovable-clone',
+  SOURCE_CODE: 'https://github.com/sanidhyy/cursor-clone',
 } as const;
 
 export const SITE_CONFIG: Metadata = {
