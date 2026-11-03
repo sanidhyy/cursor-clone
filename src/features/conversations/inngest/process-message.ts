@@ -137,7 +137,6 @@ export const processMessage = inngest.createFunction(
       description: 'An expert AI coding assistant',
       system: systemPrompt,
       model: openai({
-        // TODO: fix gpt 6 astra not working
         model: 'gpt-5',
         defaultParameters: { max_completion_tokens: MAX_CODING_AGENT_COMPLETION_TOKENS },
       }),
