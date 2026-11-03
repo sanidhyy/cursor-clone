@@ -562,3 +562,18 @@ export const createProjectWithConversation = mutation({
     return { projectId, conversationId };
   },
 });
+
+export const getProjectTitle = query({
+  args: {
+    id: v.id('projects'),
+    internalKey: v.string(),
+  },
+  handler: async ({ db }, { id: projectId, internalKey }) => {
+    validateInternalKey(internalKey);
+
+    const project = await db.get('projects', projectId);
+    if (!project) throw new Error('Project not found');
+
+    return project.name;
+  },
+});
