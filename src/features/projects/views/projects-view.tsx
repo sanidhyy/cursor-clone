@@ -72,7 +72,7 @@ export const ProjectsView = () => {
       <div className='flex min-h-screen flex-col items-center justify-center bg-sidebar p-6 md:p-16'>
         <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-4'>
           <div className='flex w-full items-center justify-between gap-4'>
-            <div className='group/logo flex w-full items-center gap-2'>
+            <div className='group/logo flex w-full cursor-default items-center gap-2 select-none'>
               <Image
                 src='/logo.svg'
                 alt='Polaris Logo'
