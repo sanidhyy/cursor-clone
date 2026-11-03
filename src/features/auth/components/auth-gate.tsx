@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 
+import { RedirectToSignIn } from '@clerk/nextjs';
 import { Authenticated, AuthLoading, Unauthenticated } from 'convex/react';
 
 import { AuthLoading as AuthLoadingView } from './auth-loading';
-import { Unauthenticated as UnauthenticatedView } from './unauthenticated';
 
 export const AuthGate = ({ children }: Readonly<React.PropsWithChildren>) => {
   return (
@@ -13,7 +13,7 @@ export const AuthGate = ({ children }: Readonly<React.PropsWithChildren>) => {
       <Authenticated>{children}</Authenticated>
 
       <Unauthenticated>
-        <UnauthenticatedView />
+        <RedirectToSignIn />
       </Unauthenticated>
 
       <AuthLoading>
