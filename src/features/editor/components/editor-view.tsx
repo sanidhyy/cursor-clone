@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 import { AlertTriangleIcon } from 'lucide-react';
 
+import { DEBOUNCE_MS } from '@/features/editor/constants';
 import { useEditor } from '@/features/editor/hooks/use-editor';
 import { useFile, useUpdateFile } from '@/features/projects/hooks/use-files';
 
@@ -65,7 +66,7 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
 
               timeoutRef.current = setTimeout(
                 () => updateFile({ id: activeFile._id, content }),
-                1500
+                DEBOUNCE_MS
               );
             }}
           />
