@@ -9,6 +9,7 @@ import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
 
 interface ExportGitHubRepoEvent {
+  ownerId: string;
   projectId: Id<'projects'>;
   repoName: string;
   visibility: 'public' | 'private';
@@ -32,9 +33,16 @@ export const exportGitHubRepo = inngest.createFunction(
     onFailure: async ({ event, step }) => {
       const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
-      const { projectId } = event.data.event.data as ExportGitHubRepoEvent;
+      const { projectId, ownerId } = event.data.event.data as ExportGitHubRepoEvent;
 
       await step.run('set-failed-status', async () => {
+        const project = await convex.query(api.system.getProjectById, {
+          internalKey,
+          projectId,
+          ownerId,
+        });
+        if (!project) return;
+
         await convex.mutation(api.system.updateExportStatus, {
           internalKey,
           projectId,
@@ -45,11 +53,18 @@ export const exportGitHubRepo = inngest.createFunction(
     triggers: { event: 'github/export.repo' },
   },
   async ({ event, step }) => {
-    const { projectId, repoName, visibility, description, githubToken } =
+    const { projectId, repoName, visibility, description, githubToken, ownerId } =
       event.data as ExportGitHubRepoEvent;
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
     await step.run('set-exporting-status', async () => {
+      const project = await convex.query(api.system.getProjectById, {
+        internalKey,
+        projectId,
+        ownerId,
+      });
+      if (!project) throw new NonRetriableError('Project not found');
+
       await convex.mutation(api.system.updateExportStatus, {
         internalKey,
         projectId,

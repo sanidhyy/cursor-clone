@@ -3,14 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { z } from 'zod';
 
+import { api } from '@/../convex/_generated/api';
 import {
   BAD_REQUEST,
   INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
   PAYMENT_REQUIRED,
   UNAUTHORIZED,
 } from '@/constants/http-status-codes';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
+import { convex } from '@/lib/convex-client';
 
 const requestSchema = z.object({
   projectId: z.string(),
@@ -39,6 +42,13 @@ export async function POST(req: NextRequest) {
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
     const { projectId, repoName, visibility, description } = data;
 
+    const project = await convex.query(api.system.getProjectById, {
+      internalKey,
+      projectId,
+      ownerId: userId,
+    });
+    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: NOT_FOUND });
+
     const client = await clerkClient();
     const tokens = await client.users.getUserOauthAccessToken(userId, 'github');
 
@@ -53,6 +63,7 @@ export async function POST(req: NextRequest) {
       name: 'github/export.repo',
       data: {
         projectId,
+        ownerId: userId,
         repoName,
         visibility,
         description,
