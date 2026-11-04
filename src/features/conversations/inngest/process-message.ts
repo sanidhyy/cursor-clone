@@ -25,6 +25,7 @@ import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
 
 interface MessageEvent {
+  ownerId: string;
   messageId: Id<'messages'>;
   conversationId: Id<'conversations'>;
   projectId: Id<'projects'>;
@@ -42,10 +43,28 @@ export const processMessage = inngest.createFunction(
       },
     ],
     onFailure: async ({ event, step }) => {
-      const { messageId } = event.data.event.data as MessageEvent;
+      const { messageId, conversationId, projectId, ownerId } = event.data.event
+        .data as MessageEvent;
       const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
       await step.run('update-message-on-failure', async () => {
+        const conversation = await convex.query(api.system.getConversationById, {
+          internalKey,
+          conversationId,
+          ownerId,
+        });
+
+        if (!conversation || conversation.projectId !== projectId) return;
+
+        const message = await convex.query(api.system.getMessageById, {
+          internalKey,
+          messageId,
+          projectId,
+          conversationId,
+        });
+
+        if (!message || message.role !== 'assistant') return;
+
         await convex.mutation(api.system.updateMessageContent, {
           internalKey,
           messageId,
@@ -56,19 +75,32 @@ export const processMessage = inngest.createFunction(
     },
   },
   async ({ event, step }) => {
-    const { messageId, conversationId, projectId, message } = event.data as MessageEvent;
+    const { messageId, conversationId, projectId, message, ownerId } = event.data as MessageEvent;
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
     await step.sleep('wait-for-db-sync', '1s');
 
-    const conversation = await step.run('get-conversation', async () => {
+    const conversation = await step.run('authorize-conversation', async () => {
       return await convex.query(api.system.getConversationById, {
         internalKey,
         conversationId,
+        ownerId,
       });
     });
 
-    if (!conversation) throw new NonRetriableError('Conversation not found');
+    if (!conversation || conversation.projectId !== projectId)
+      throw new NonRetriableError('Conversation not found');
+
+    const assistantMessage = await step.run('get-assistant-message', async () => {
+      return await convex.query(api.system.getMessageById, {
+        internalKey,
+        messageId,
+        projectId,
+        conversationId,
+      });
+    });
+    if (!assistantMessage || assistantMessage.role !== 'assistant')
+      throw new NonRetriableError('Message not found');
 
     const recentMessages = await step.run('get-recent-messages', async () => {
       return await convex.query(api.system.getRecentMessages, {
@@ -142,12 +174,12 @@ export const processMessage = inngest.createFunction(
       }),
       tools: [
         createListFilesTool({ internalKey, projectId }),
-        createReadFilesTool({ internalKey }),
-        createUpdateFileTool({ internalKey }),
+        createReadFilesTool({ internalKey, projectId }),
+        createUpdateFileTool({ internalKey, projectId }),
         createCreateFilesTool({ internalKey, projectId }),
         createCreateFolderTool({ internalKey, projectId }),
-        createRenameFileTool({ internalKey }),
-        createDeleteFilesTool({ internalKey }),
+        createRenameFileTool({ internalKey, projectId }),
+        createDeleteFilesTool({ internalKey, projectId }),
         createScrapeUrlsTool(),
       ],
     });

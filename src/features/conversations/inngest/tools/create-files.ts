@@ -58,6 +58,7 @@ export const createCreateFilesTool = ({ internalKey, projectId }: CreateFilesToo
 
               const parentFolder = await convex.query(api.system.getFileById, {
                 internalKey,
+                projectId,
                 fileId: resolvedParentId,
               });
 

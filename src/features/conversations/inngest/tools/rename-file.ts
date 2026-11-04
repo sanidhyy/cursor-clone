@@ -7,6 +7,7 @@ import { convex } from '@/lib/convex-client';
 
 interface RenameFileToolOptions {
   internalKey: string;
+  projectId: Id<'projects'>;
 }
 
 const paramsSchema = z.object({
@@ -14,7 +15,7 @@ const paramsSchema = z.object({
   newName: z.string().min(1, 'New name is required'),
 });
 
-export const createRenameFileTool = ({ internalKey }: RenameFileToolOptions) => {
+export const createRenameFileTool = ({ internalKey, projectId }: RenameFileToolOptions) => {
   return createTool({
     name: 'renameFile',
     description: 'Rename a file or folder.',
@@ -30,6 +31,7 @@ export const createRenameFileTool = ({ internalKey }: RenameFileToolOptions) => 
 
       const file = await convex.query(api.system.getFileById, {
         internalKey,
+        projectId,
         fileId: fileId as Id<'files'>,
       });
       if (!file)
@@ -39,6 +41,7 @@ export const createRenameFileTool = ({ internalKey }: RenameFileToolOptions) => 
         return await toolStep?.run('rename-file', async () => {
           await convex.mutation(api.system.renameFile, {
             internalKey,
+            projectId,
             fileId: fileId as Id<'files'>,
             newName,
           });

@@ -7,6 +7,7 @@ import { convex } from '@/lib/convex-client';
 
 interface ReadFilesToolOptions {
   internalKey: string;
+  projectId: Id<'projects'>;
 }
 
 const paramsSchema = z.object({
@@ -15,7 +16,7 @@ const paramsSchema = z.object({
     .min(1, 'Provide at least one file id'),
 });
 
-export const createReadFilesTool = ({ internalKey }: ReadFilesToolOptions) => {
+export const createReadFilesTool = ({ internalKey, projectId }: ReadFilesToolOptions) => {
   return createTool({
     name: 'readFiles',
     description: 'Read the content of files from the project. Returns file contents.',
@@ -39,6 +40,7 @@ export const createReadFilesTool = ({ internalKey }: ReadFilesToolOptions) => {
           for (const fileId of fileIds) {
             const file = await convex.query(api.system.getFileById, {
               internalKey,
+              projectId,
               fileId: fileId as Id<'files'>,
             });
 

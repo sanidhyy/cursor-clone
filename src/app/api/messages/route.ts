@@ -34,8 +34,9 @@ export async function POST(req: NextRequest) {
     const { conversationId, message } = data;
 
     const conversation = await convex.query(api.system.getConversationById, {
-      conversationId: conversationId as Id<'conversations'>,
+      conversationId,
       internalKey,
+      ownerId: userId,
     });
     if (!conversation)
       return NextResponse.json({ error: 'Conversation not found' }, { status: NOT_FOUND });
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
       name: 'message/sent',
       data: {
         messageId: assistantMessageId,
+        ownerId: userId,
         conversationId,
         projectId,
         message,

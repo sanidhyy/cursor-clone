@@ -7,6 +7,7 @@ import { convex } from '@/lib/convex-client';
 
 interface UpdateFileToolOptions {
   internalKey: string;
+  projectId: Id<'projects'>;
 }
 
 const paramsSchema = z.object({
@@ -14,7 +15,7 @@ const paramsSchema = z.object({
   content: z.string(),
 });
 
-export const createUpdateFileTool = ({ internalKey }: UpdateFileToolOptions) => {
+export const createUpdateFileTool = ({ internalKey, projectId }: UpdateFileToolOptions) => {
   return createTool({
     name: 'updateFile',
     description: 'Update the content of an existing file.',
@@ -30,6 +31,7 @@ export const createUpdateFileTool = ({ internalKey }: UpdateFileToolOptions) => 
 
       const file = await convex.query(api.system.getFileById, {
         internalKey,
+        projectId,
         fileId: fileId as Id<'files'>,
       });
       if (!file)
@@ -41,6 +43,7 @@ export const createUpdateFileTool = ({ internalKey }: UpdateFileToolOptions) => 
         return await toolStep?.run('update-file', async () => {
           await convex.mutation(api.system.updateFile, {
             internalKey,
+            projectId,
             fileId: fileId as Id<'files'>,
             content,
           });

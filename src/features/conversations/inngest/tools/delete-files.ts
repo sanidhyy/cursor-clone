@@ -7,6 +7,7 @@ import { convex } from '@/lib/convex-client';
 
 interface DeleteFilesToolOptions {
   internalKey: string;
+  projectId: Id<'projects'>;
 }
 
 const paramsSchema = z.object({
@@ -15,7 +16,7 @@ const paramsSchema = z.object({
     .min(1, 'Provide at least one file ID'),
 });
 
-export const createDeleteFilesTool = ({ internalKey }: DeleteFilesToolOptions) => {
+export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToolOptions) => {
   return createTool({
     name: 'deleteFiles',
     description:
@@ -34,6 +35,7 @@ export const createDeleteFilesTool = ({ internalKey }: DeleteFilesToolOptions) =
       for (const fileId of fileIds) {
         const file = await convex.query(api.system.getFileById, {
           internalKey,
+          projectId,
           fileId: fileId as Id<'files'>,
         });
 
@@ -54,6 +56,7 @@ export const createDeleteFilesTool = ({ internalKey }: DeleteFilesToolOptions) =
           for (const file of filesToDelete) {
             await convex.mutation(api.system.deleteFile, {
               internalKey,
+              projectId,
               fileId: file.id as Id<'files'>,
             });
 

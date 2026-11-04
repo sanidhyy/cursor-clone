@@ -11,15 +11,36 @@ const validateInternalKey = (key: string) => {
   if (key !== internalKey) throw new Error('Unauthorized');
 };
 
+export const getProjectById = query({
+  args: {
+    internalKey: v.string(),
+    projectId: v.string(),
+    ownerId: v.string(),
+  },
+  handler: async ({ db }, { internalKey, projectId, ownerId }) => {
+    validateInternalKey(internalKey);
+    const id = db.normalizeId('projects', projectId);
+    if (!id) return null;
+    const project = await db.get('projects', id);
+    return project?.ownerId === ownerId ? project : null;
+  },
+});
+
 export const getConversationById = query({
   args: {
-    conversationId: v.id('conversations'),
+    conversationId: v.string(),
     internalKey: v.string(),
+    ownerId: v.string(),
   },
-  handler: async ({ db }, { conversationId, internalKey }) => {
+  handler: async ({ db }, { conversationId, internalKey, ownerId }) => {
     validateInternalKey(internalKey);
 
-    return await db.get('conversations', conversationId);
+    const id = db.normalizeId('conversations', conversationId);
+    if (!id) return null;
+    const conversation = await db.get('conversations', id);
+    if (!conversation) return null;
+    const project = await db.get('projects', conversation.projectId);
+    return project?.ownerId === ownerId ? conversation : null;
   },
 });
 
@@ -50,6 +71,22 @@ export const createMessage = mutation({
     });
 
     return messageId;
+  },
+});
+
+export const getMessageById = query({
+  args: {
+    internalKey: v.string(),
+    messageId: v.id('messages'),
+    projectId: v.id('projects'),
+    conversationId: v.id('conversations'),
+  },
+  handler: async ({ db }, { internalKey, messageId, projectId, conversationId }) => {
+    validateInternalKey(internalKey);
+    const message = await db.get('messages', messageId);
+    return message?.projectId === projectId && message.conversationId === conversationId
+      ? message
+      : null;
   },
 });
 
@@ -155,27 +192,29 @@ export const getProjectFiles = query({
 export const getFileById = query({
   args: {
     internalKey: v.string(),
+    projectId: v.id('projects'),
     fileId: v.id('files'),
   },
-  handler: async ({ db }, { internalKey, fileId }) => {
+  handler: async ({ db }, { internalKey, projectId, fileId }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
-    return file;
+    return file?.projectId === projectId ? file : null;
   },
 });
 
 export const updateFile = mutation({
   args: {
     internalKey: v.string(),
+    projectId: v.id('projects'),
     fileId: v.id('files'),
     content: v.string(),
   },
-  handler: async ({ db }, { internalKey, fileId, content }) => {
+  handler: async ({ db }, { internalKey, projectId, fileId, content }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     await db.patch('files', fileId, {
       content,
@@ -196,6 +235,12 @@ export const createFile = mutation({
   },
   handler: async ({ db }, { internalKey, projectId, name, content, parentId }) => {
     validateInternalKey(internalKey);
+
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
 
     const trimmedName = name.trim();
 
@@ -235,6 +280,12 @@ export const createFiles = mutation({
   },
   handler: async ({ db }, { internalKey, projectId, parentId, files }) => {
     validateInternalKey(internalKey);
+
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
 
     const existingFiles = await db
       .query('files')
@@ -282,6 +333,12 @@ export const createFolder = mutation({
   handler: async ({ db }, { internalKey, projectId, name, parentId }) => {
     validateInternalKey(internalKey);
 
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
+
     const trimmedName = name.trim();
 
     // check if file or folder with same name already exists in this parent folder
@@ -308,16 +365,17 @@ export const createFolder = mutation({
 export const renameFile = mutation({
   args: {
     internalKey: v.string(),
+    projectId: v.id('projects'),
     fileId: v.id('files'),
     newName: v.string(),
   },
-  handler: async ({ db }, { internalKey, fileId, newName }) => {
+  handler: async ({ db }, { internalKey, projectId, fileId, newName }) => {
     validateInternalKey(internalKey);
 
     const trimmedNewName = newName.trim();
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     // check if file or folder with new name already exists in this parent folder
     const existingFilesOrFolders = await db
@@ -340,25 +398,27 @@ export const renameFile = mutation({
 export const deleteFile = mutation({
   args: {
     internalKey: v.string(),
+    projectId: v.id('projects'),
     fileId: v.id('files'),
   },
-  handler: async ({ db, storage }, { internalKey, fileId }) => {
+  handler: async ({ db, storage }, { internalKey, projectId, fileId }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     // recursively delete file/folder and all descendants
     const deleteRecursive = async (fileId: Id<'files'>) => {
       const item = await db.get('files', fileId);
       if (!item) return;
+      if (item.projectId !== projectId) throw new Error('File not found');
 
       // if its a folder, delete all children first
       if (item.type === 'folder') {
         const children = await db
           .query('files')
           .withIndex('by_project_parent', (q) =>
-            q.eq('projectId', item.projectId).eq('parentId', fileId)
+            q.eq('projectId', projectId).eq('parentId', fileId)
           )
           .collect();
 
@@ -422,6 +482,12 @@ export const createBinaryFile = mutation({
   },
   handler: async ({ db }, { internalKey, projectId, name, storageId, parentId }) => {
     validateInternalKey(internalKey);
+
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
 
     const existingFilesOrFolders = await db
       .query('files')

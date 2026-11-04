@@ -5,7 +5,12 @@ import { z } from 'zod';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
+import {
+  BAD_REQUEST,
+  INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
+  UNAUTHORIZED,
+} from '@/constants/http-status-codes';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
@@ -26,6 +31,13 @@ export async function POST(req: NextRequest) {
 
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
     const { projectId } = data;
+
+    const project = await convex.query(api.system.getProjectById, {
+      internalKey,
+      projectId,
+      ownerId: userId,
+    });
+    if (!project) return NextResponse.json({ error: 'Project not found' }, { status: NOT_FOUND });
 
     const processingMessages = await convex.query(api.system.processingMessages, {
       internalKey,
