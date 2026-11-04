@@ -14,31 +14,29 @@ const validateInternalKey = (key: string) => {
 export const getProjectById = query({
   args: {
     internalKey: v.string(),
-    projectId: v.string(),
+    projectId: v.id('projects'),
     ownerId: v.string(),
   },
   handler: async ({ db }, { internalKey, projectId, ownerId }) => {
     validateInternalKey(internalKey);
-    const id = db.normalizeId('projects', projectId);
-    if (!id) return null;
-    const project = await db.get('projects', id);
+
+    const project = await db.get('projects', projectId);
     return project?.ownerId === ownerId ? project : null;
   },
 });
 
 export const getConversationById = query({
   args: {
-    conversationId: v.string(),
+    conversationId: v.id('conversations'),
     internalKey: v.string(),
     ownerId: v.string(),
   },
   handler: async ({ db }, { conversationId, internalKey, ownerId }) => {
     validateInternalKey(internalKey);
 
-    const id = db.normalizeId('conversations', conversationId);
-    if (!id) return null;
-    const conversation = await db.get('conversations', id);
+    const conversation = await db.get('conversations', conversationId);
     if (!conversation) return null;
+
     const project = await db.get('projects', conversation.projectId);
     return project?.ownerId === ownerId ? conversation : null;
   },
@@ -626,20 +624,5 @@ export const createProjectWithConversation = mutation({
     });
 
     return { projectId, conversationId };
-  },
-});
-
-export const getProjectTitle = query({
-  args: {
-    id: v.id('projects'),
-    internalKey: v.string(),
-  },
-  handler: async ({ db }, { id: projectId, internalKey }) => {
-    validateInternalKey(internalKey);
-
-    const project = await db.get('projects', projectId);
-    if (!project) throw new Error('Project not found');
-
-    return project.name;
   },
 });

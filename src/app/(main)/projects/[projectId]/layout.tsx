@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { auth } from '@clerk/nextjs/server';
+
 import { ProjectIdLayoutView } from '@/features/projects/views/project-id-layout-view';
 
 import { api } from '@/../convex/_generated/api';
@@ -14,11 +16,16 @@ export const generateMetadata = async ({
   let title = 'Project not found';
 
   try {
-    const projectName = await convex.query(api.system.getProjectTitle, {
-      id: projectId as Id<'projects'>,
-      internalKey: env.POLARIS_CONVEX_INTERNAL_KEY,
-    });
-    if (!!projectName) title = projectName;
+    const { userId } = await auth();
+    if (!!userId) {
+      const project = await convex.query(api.system.getProjectById, {
+        internalKey: env.POLARIS_CONVEX_INTERNAL_KEY,
+        ownerId: userId,
+        projectId: projectId as Id<'projects'>,
+      });
+
+      if (!!project) title = project.name;
+    }
   } catch {}
 
   return {

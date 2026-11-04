@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const { conversationId, message } = data;
 
     const conversation = await convex.query(api.system.getConversationById, {
-      conversationId,
+      conversationId: conversationId as Id<'conversations'>,
       internalKey,
       ownerId: userId,
     });

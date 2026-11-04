@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const project = await convex.query(api.system.getProjectById, {
       internalKey,
-      projectId,
+      projectId: projectId as Id<'projects'>,
       ownerId: userId,
     });
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: NOT_FOUND });
