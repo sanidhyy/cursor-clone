@@ -24,10 +24,7 @@ const schema = defineSchema({
         devCommand: v.optional(v.string()),
       })
     ),
-  })
-    .index('by_owner', ['ownerId'])
-    .index('by_updated_at', ['updatedAt'])
-    .index('by_owner_updated_at', ['ownerId', 'updatedAt']),
+  }).index('by_owner_updated_at', ['ownerId', 'updatedAt']),
 
   files: defineTable({
     projectId: v.id('projects'),
@@ -38,9 +35,7 @@ const schema = defineSchema({
     storageId: v.optional(v.id('_storage')), // binary files only
     updatedAt: v.number(),
   })
-    .index('by_name', ['name'])
     .index('by_project', ['projectId'])
-    .index('by_parent', ['parentId'])
     .index('by_project_parent', ['projectId', 'parentId'])
     .index('by_name_project_parent', ['name', 'projectId', 'parentId']),
 

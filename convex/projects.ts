@@ -4,23 +4,6 @@ import { mutation, query } from '@/../convex/_generated/server';
 
 import { verifyAuth } from './auth';
 
-export const create = mutation({
-  args: {
-    name: v.string(),
-  },
-  handler: async ({ auth, db }, { name: projectName }) => {
-    const user = await verifyAuth(auth);
-
-    const projectId = await db.insert('projects', {
-      name: projectName,
-      ownerId: user.subject,
-      updatedAt: Date.now(),
-    });
-
-    return projectId;
-  },
-});
-
 export const updateSettings = mutation({
   args: {
     id: v.id('projects'),
