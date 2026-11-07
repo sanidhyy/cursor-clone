@@ -65,9 +65,9 @@ export async function POST(req: NextRequest) {
       name: 'github/import.repo',
       data: {
         owner,
+        ownerId: userId,
         repo,
         projectId,
-        githubToken,
       },
     });
 

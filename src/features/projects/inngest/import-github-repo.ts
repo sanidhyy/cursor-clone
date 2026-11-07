@@ -1,3 +1,5 @@
+import { clerkClient } from '@clerk/nextjs/server';
+import { NonRetriableError } from 'inngest';
 import { isBinaryFile } from 'isbinaryfile';
 import ky from 'ky';
 import { Octokit } from 'octokit';
@@ -10,9 +12,9 @@ import { convex } from '@/lib/convex-client';
 
 interface ImportGitHubRepoEvent {
   owner: string;
+  ownerId: string;
   repo: string;
   projectId: Id<'projects'>;
-  githubToken: string;
 }
 
 export const importGitHubRepo = inngest.createFunction(
@@ -34,8 +36,14 @@ export const importGitHubRepo = inngest.createFunction(
     triggers: { event: 'github/import.repo' },
   },
   async ({ event, step }) => {
-    const { owner, repo, projectId, githubToken } = event.data as ImportGitHubRepoEvent;
+    const { owner, ownerId, repo, projectId } = event.data as ImportGitHubRepoEvent;
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
+
+    const client = await clerkClient();
+    const tokens = await client.users.getUserOauthAccessToken(ownerId, 'github');
+
+    const githubToken = tokens.data[0]?.token || null;
+    if (!githubToken) throw new NonRetriableError('GitHub not connected');
 
     const octokit = new Octokit({ auth: githubToken });
 
@@ -44,6 +52,8 @@ export const importGitHubRepo = inngest.createFunction(
     });
 
     const tree = await step.run('fetch-repo-tree', async () => {
+      const octokit = new Octokit({ auth: githubToken });
+
       try {
         const { data } = await octokit.rest.git.getTree({
           owner,

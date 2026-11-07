@@ -68,8 +68,6 @@ export async function POST(req: NextRequest) {
         repoName,
         visibility,
         description,
-        githubToken,
-        internalKey,
       },
     });
 

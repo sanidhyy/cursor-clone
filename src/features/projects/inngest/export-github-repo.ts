@@ -1,3 +1,4 @@
+import { clerkClient } from '@clerk/nextjs/server';
 import { NonRetriableError } from 'inngest';
 import ky from 'ky';
 import { Octokit } from 'octokit';
@@ -14,7 +15,6 @@ interface ExportGitHubRepoEvent {
   repoName: string;
   visibility: 'public' | 'private';
   description?: string;
-  githubToken: string;
 }
 
 type FileWithUrl = Doc<'files'> & {
@@ -53,7 +53,7 @@ export const exportGitHubRepo = inngest.createFunction(
     triggers: { event: 'github/export.repo' },
   },
   async ({ event, step }) => {
-    const { projectId, repoName, visibility, description, githubToken, ownerId } =
+    const { projectId, repoName, visibility, description, ownerId } =
       event.data as ExportGitHubRepoEvent;
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
@@ -71,6 +71,12 @@ export const exportGitHubRepo = inngest.createFunction(
         status: 'exporting',
       });
     });
+
+    const client = await clerkClient();
+    const tokens = await client.users.getUserOauthAccessToken(ownerId, 'github');
+
+    const githubToken = tokens.data[0]?.token || null;
+    if (!githubToken) throw new NonRetriableError('GitHub not connected');
 
     const octokit = new Octokit({ auth: githubToken });
 
