@@ -472,7 +472,7 @@ export type PromptInputProps = Omit<HTMLAttributes<HTMLFormElement>, 'onSubmit' 
   onSubmit: (
     message: PromptInputMessage,
     event: FormEvent<HTMLFormElement>
-  ) => void | Promise<void>;
+  ) => void | boolean | Promise<void | boolean>;
 };
 
 export const PromptInput = ({
@@ -495,6 +495,7 @@ export const PromptInput = ({
   // Refs
   const inputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const submissionPending = useRef(false);
 
   // ----- Local attachments (only used when no provider)
   const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
@@ -794,6 +795,8 @@ export const PromptInput = ({
   const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     async (event) => {
       event.preventDefault();
+      if (submissionPending.current) return;
+      submissionPending.current = true;
 
       const form = event.currentTarget;
       const text = usingProvider
@@ -802,12 +805,6 @@ export const PromptInput = ({
             const formData = new FormData(form);
             return (formData.get('message') as string) || '';
           })();
-
-      // Reset form immediately after capturing text to avoid race condition
-      // where user input during async blob conversion would be lost
-      if (!usingProvider) {
-        form.reset();
-      }
 
       try {
         // Convert blob URLs to data URLs asynchronously
@@ -825,28 +822,18 @@ export const PromptInput = ({
           })
         );
 
-        const result = onSubmit({ files: convertedFiles, text }, event);
-
-        // Handle both sync and async onSubmit
-        if (result instanceof Promise) {
-          try {
-            await result;
-            clear();
-            if (usingProvider) {
-              controller.textInput.clear();
-            }
-          } catch {
-            // Don't clear on error - user may want to retry
-          }
-        } else {
-          // Sync function completed without throwing, clear inputs
-          clear();
-          if (usingProvider) {
-            controller.textInput.clear();
-          }
+        const result = await onSubmit({ files: convertedFiles, text }, event);
+        if (result === false) return;
+        clear();
+        const currentText = form.querySelector<HTMLTextAreaElement>('[name="message"]')?.value;
+        if (currentText === text) {
+          if (usingProvider) controller.textInput.clear();
+          else form.reset();
         }
       } catch {
-        // Don't clear on error - user may want to retry
+        // Preserve the draft and attachments so the user can retry.
+      } finally {
+        submissionPending.current = false;
       }
     },
     [usingProvider, controller, files, onSubmit, clear]

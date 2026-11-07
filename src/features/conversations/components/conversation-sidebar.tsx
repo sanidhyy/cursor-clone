@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import ky from 'ky';
 import { HistoryIcon, PlusIcon } from 'lucide-react';
@@ -41,6 +41,8 @@ interface ConversationSidebarProps {
 
 export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => {
   const [input, setInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionPending = useRef(false);
   const [selectedConversationId, setSelectedConversationId] = useState<Id<'conversations'> | null>(
     null
   );
@@ -82,33 +84,32 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   };
 
   const handleSubmit = async (message: PromptInputMessage) => {
-    if (isProcessing && !message.text) {
-      await handleCancel();
-      setInput('');
-      return;
-    }
-
+    if (submissionPending.current || isProcessing) return false;
     const text = promptSchema.safeParse(message.text);
     if (!text.success) {
       toast.error(text.error.issues[0].message);
-      return;
+      return false;
     }
 
-    let conversationId = activeConversationId;
-    if (!conversationId) {
-      conversationId = await handleCreateConversation();
-      if (!conversationId) return;
-    }
-
+    submissionPending.current = true;
+    setIsSubmitting(true);
     try {
+      const conversationId = activeConversationId || (await handleCreateConversation());
+      if (!conversationId) return false;
       await ky.post('/api/messages', {
-        json: sendMessageRequestSchema.parse({ conversationId, message: text.data }),
+        json: sendMessageRequestSchema.parse({
+          conversationId,
+          message: text.data,
+        }),
       });
+      setInput((current) => (current === message.text ? '' : current));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Message failed to send');
+      return false;
+    } finally {
+      submissionPending.current = false;
+      setIsSubmitting(false);
     }
-
-    setInput('');
   };
 
   return (
@@ -172,8 +173,9 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
               <PromptInputTools />
 
               <PromptInputSubmit
-                disabled={isProcessing ? false : !input.trim()}
-                status={isProcessing ? 'streaming' : undefined}
+                disabled={isSubmitting || (!isProcessing && !input.trim())}
+                status={isProcessing ? 'streaming' : isSubmitting ? 'submitted' : undefined}
+                onStop={handleCancel}
               />
             </PromptInputFooter>
           </PromptInput>
