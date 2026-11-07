@@ -7,10 +7,8 @@ export const fileNameSchema = z
   .trim()
   .min(1, 'File or folder name is required')
   .max(255, 'File or folder name must be 255 characters or fewer')
-  .regex(
-    /^(?!\.{1,2}$)[^/\\\u0000-\u001f\u007f]+$/,
-    'Use a single name without slashes, control characters, ".", or ".."'
-  );
+  .regex(/^[^/\\\u0000-\u001f\u007f]+$/, 'Use a single name without slashes or control characters')
+  .refine((name) => name !== '.' && name !== '..', 'File or folder name cannot be "." or ".."');
 
 export const fileContentSchema = codeSchema;
 

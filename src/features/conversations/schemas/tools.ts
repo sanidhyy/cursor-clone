@@ -42,6 +42,10 @@ export const createFilesParamsSchema = z.object({
   parentId: parentIdSchema,
   files: filesInputSchema.describe('Files to create in the same folder'),
 });
+
 export const scrapeUrlsParamsSchema = z.object({
-  urls: z.array(httpUrlSchema).min(1, 'Provide at least one URL').max(5, 'Provide at most 5 URLs'),
+  urls: z
+    .array(httpUrlSchema.meta({ format: undefined }))
+    .min(1, 'Provide at least one URL')
+    .max(5, 'Provide at most 5 URLs'),
 });
