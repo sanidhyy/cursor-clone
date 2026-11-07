@@ -1,6 +1,6 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 
-import { httpUrlSchema, redirectPathSchema, secretSchema } from '@/schemas/common';
+import { httpUrlSchema, redirectPathSchema, secretSchema } from '../schemas/common';
 
 export const env = createEnv({
   client: {
