@@ -16,10 +16,11 @@ export const fetcher = async (
   signal: AbortSignal
 ): Promise<string | null> => {
   try {
-    const { data: validatedPayload, success: validatedPayloadSuccess } =
+    const { data: validatedPayload, error: validationError } =
       quickEditRequestSchema.safeParse(payload);
 
-    if (!validatedPayload || !validatedPayloadSuccess) throw new Error('Invalid Request');
+    if (!validatedPayload || validationError)
+      throw new Error(validationError?.issues[0]?.message || 'Invalid Request');
 
     const response = await ky
       .post('/api/quick-edit', {
@@ -35,7 +36,7 @@ export const fetcher = async (
 
     if (!validatedResponse || !validatedResponseSuccess) throw new Error('Invalid Response');
 
-    return validatedResponse.editedCode || null;
+    return validatedResponse.editedCode;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') return null;
 

@@ -1,22 +1,17 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { scrapeUrlsParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { firecrawl } from '@/lib/firecrawl';
-
-const paramsSchema = z.object({
-  urls: z.array(z.url('Invalid URL format')).min(1, 'Provide at least on URL to scrape'),
-});
 
 export const createScrapeUrlsTool = () => {
   return createTool({
     name: 'scrape-urls',
     description:
       'Scrape content from URLs to get documentation or reference material. Use this when the user provides URLs or references external documentation. Returns markdown content from the scraped pages.',
-    parameters: z.object({
-      urls: z.array(z.string()).describe('Array of URLs to scrape for content'),
-    }),
+    parameters: scrapeUrlsParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = scrapeUrlsParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { urls } = parsedParams.data;

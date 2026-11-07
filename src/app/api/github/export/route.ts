@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { z } from 'zod';
+
+import { exportGitHubRequestSchema } from '@/features/projects/schemas/github';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -16,13 +17,6 @@ import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
 
-const requestSchema = z.object({
-  projectId: z.string(),
-  repoName: z.string().min(1).max(100),
-  visibility: z.enum(['public', 'private']).default('private'),
-  description: z.string().max(350).optional(),
-});
-
 export async function POST(req: NextRequest) {
   try {
     const { userId, has } = await auth();
@@ -36,9 +30,12 @@ export async function POST(req: NextRequest) {
       );
 
     const body = await req.json();
-    const { data, error } = requestSchema.safeParse(body);
+    const { data, error } = exportGitHubRequestSchema.safeParse(body);
     if (!data || error)
-      return NextResponse.json({ error: 'Invalid Request' }, { status: BAD_REQUEST });
+      return NextResponse.json(
+        { error: error?.issues[0]?.message || 'Invalid Request' },
+        { status: BAD_REQUEST }
+      );
 
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
     const { projectId, repoName, visibility, description } = data;

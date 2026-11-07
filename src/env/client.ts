@@ -1,20 +1,21 @@
 import { createEnv } from '@t3-oss/env-nextjs';
-import { z } from 'zod';
+
+import { httpUrlSchema, redirectPathSchema, secretSchema } from '@/schemas/common';
 
 export const env = createEnv({
   client: {
     // clerk api keys
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().trim().min(1).startsWith('pk_'),
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: secretSchema.startsWith('pk_'),
 
     // clerk redirect urls
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL: z.string().trim().min(1).startsWith('/'),
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().trim().min(1).startsWith('/'),
-    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: z.string().trim().min(1).startsWith('/'),
-    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: z.string().trim().min(1).startsWith('/'),
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL: redirectPathSchema,
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL: redirectPathSchema,
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: redirectPathSchema,
+    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: redirectPathSchema,
 
     // convex urls
-    NEXT_PUBLIC_CONVEX_URL: z.url().trim(),
-    NEXT_PUBLIC_CONVEX_SITE_URL: z.url().trim(),
+    NEXT_PUBLIC_CONVEX_URL: httpUrlSchema,
+    NEXT_PUBLIC_CONVEX_SITE_URL: httpUrlSchema,
   },
   emptyStringAsUndefined: true,
   isServer: typeof window === 'undefined',

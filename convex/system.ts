@@ -1,9 +1,17 @@
 import { v } from 'convex/values';
 
 import { LAST_RECENT_MESSAGES } from '@/features/conversations/constants';
+import { conversationTitleSchema } from '@/features/conversations/schemas';
+import { projectNameSchema } from '@/features/projects/schemas';
+import {
+  fileContentSchema,
+  fileNameSchema,
+  filesInputSchema,
+} from '@/features/projects/schemas/files';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
+import { codeSchema, promptSchema, queryLimitSchema } from '@/schemas/common';
 
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
@@ -60,7 +68,7 @@ export const createMessage = mutation({
       conversationId,
       projectId,
       role,
-      content,
+      content: role === 'user' ? promptSchema.parse(content) : codeSchema.parse(content),
       status,
     });
 
@@ -97,7 +105,10 @@ export const updateMessageContent = mutation({
   handler: async ({ db }, { internalKey, messageId, content }) => {
     validateInternalKey(internalKey);
 
-    await db.patch('messages', messageId, { content, status: 'completed' });
+    await db.patch('messages', messageId, {
+      content: codeSchema.parse(content),
+      status: 'completed',
+    });
   },
 });
 
@@ -148,7 +159,7 @@ export const getRecentMessages = query({
       .order('asc')
       .collect();
 
-    return messages.slice(-limit);
+    return messages.slice(-queryLimitSchema.parse(limit));
   },
 });
 
@@ -162,7 +173,7 @@ export const updateConversationTitle = mutation({
     validateInternalKey(internalKey);
 
     await db.patch('conversations', conversationId, {
-      title,
+      title: conversationTitleSchema.parse(title),
       updatedAt: Date.now(),
     });
 
@@ -215,7 +226,7 @@ export const updateFile = mutation({
     if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     await db.patch('files', fileId, {
-      content,
+      content: fileContentSchema.parse(content),
       updatedAt: Date.now(),
     });
 
@@ -240,7 +251,7 @@ export const createFile = mutation({
         throw new Error('Folder not found');
     }
 
-    const trimmedName = name.trim();
+    const trimmedName = fileNameSchema.parse(name);
 
     // check if file or folder with same name already exists in this parent folder
     const existingFilesOrFolders = await db
@@ -254,7 +265,7 @@ export const createFile = mutation({
     const fileId = await db.insert('files', {
       projectId,
       name: trimmedName,
-      content,
+      content: fileContentSchema.parse(content),
       parentId,
       type: 'file',
       updatedAt: Date.now(),
@@ -292,8 +303,8 @@ export const createFiles = mutation({
 
     const results: { name: string; fileId: string; error?: string }[] = [];
 
-    for (const file of files) {
-      const trimmedName = file.name.trim();
+    for (const file of filesInputSchema.parse(files)) {
+      const trimmedName = file.name;
       const existingFile = existingFiles.find((f) => f.name === trimmedName);
 
       if (!!existingFile) {
@@ -337,7 +348,7 @@ export const createFolder = mutation({
         throw new Error('Folder not found');
     }
 
-    const trimmedName = name.trim();
+    const trimmedName = fileNameSchema.parse(name);
 
     // check if file or folder with same name already exists in this parent folder
     const existingFilesOrFolders = await db
@@ -370,7 +381,7 @@ export const renameFile = mutation({
   handler: async ({ db }, { internalKey, projectId, fileId, newName }) => {
     validateInternalKey(internalKey);
 
-    const trimmedNewName = newName.trim();
+    const trimmedNewName = fileNameSchema.parse(newName);
 
     const file = await db.get('files', fileId);
     if (!file || file.projectId !== projectId) throw new Error('File not found');
@@ -480,6 +491,7 @@ export const createBinaryFile = mutation({
   },
   handler: async ({ db }, { internalKey, projectId, name, storageId, parentId }) => {
     validateInternalKey(internalKey);
+    const trimmedName = fileNameSchema.parse(name);
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
@@ -490,7 +502,7 @@ export const createBinaryFile = mutation({
     const existingFilesOrFolders = await db
       .query('files')
       .withIndex('by_name_project_parent', (q) =>
-        q.eq('name', name).eq('projectId', projectId).eq('parentId', parentId)
+        q.eq('name', trimmedName).eq('projectId', projectId).eq('parentId', parentId)
       )
       .collect();
 
@@ -498,7 +510,7 @@ export const createBinaryFile = mutation({
 
     const fileId = await db.insert('files', {
       projectId,
-      name,
+      name: trimmedName,
       type: 'file',
       storageId,
       parentId,
@@ -589,7 +601,7 @@ export const createProject = mutation({
     validateInternalKey(internalKey);
 
     const projectId = await db.insert('projects', {
-      name,
+      name: projectNameSchema.parse(name),
       ownerId,
       updatedAt: Date.now(),
       importStatus: 'importing',
@@ -612,14 +624,14 @@ export const createProjectWithConversation = mutation({
     const now = Date.now();
 
     const projectId = await db.insert('projects', {
-      name: projectName,
+      name: projectNameSchema.parse(projectName),
       ownerId,
       updatedAt: now,
     });
 
     const conversationId = await db.insert('conversations', {
       projectId,
-      title: conversationTitle,
+      title: conversationTitleSchema.parse(conversationTitle),
       updatedAt: now,
     });
 

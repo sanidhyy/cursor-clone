@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { listFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -15,7 +16,7 @@ export const createListFilesTool = ({ internalKey, projectId }: ListFilesToolOpt
     name: 'listFiles',
     description:
       'List all files and folders in the project. Returns names, IDs, types, and parentId for each item. Items with parentId: null are at root level. Use the parentId to understand the folder structure - items with the same parentId are in the same folder.',
-    parameters: z.object({}),
+    parameters: listFilesParamsSchema,
     handler: async (_params, { step: toolStep }) => {
       try {
         return await toolStep?.run('list-files', async () => {

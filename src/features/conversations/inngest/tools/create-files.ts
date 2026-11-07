@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { createFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -10,40 +11,14 @@ interface CreateFilesToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  parentId: z.string(),
-  files: z
-    .array(
-      z.object({
-        name: z.string().min(1, 'File name cannot be empty'),
-        content: z.string(),
-      })
-    )
-    .min(1, 'Provide at least one file to create'),
-});
-
 export const createCreateFilesTool = ({ internalKey, projectId }: CreateFilesToolOptions) => {
   return createTool({
     name: 'createFiles',
     description:
-      'Create multiple fips at once in the same folder. Use this to batch create files that share the same parent folder. More efficient than creating files one by one.',
-    parameters: z.object({
-      parentId: z
-        .string()
-        .describe(
-          'The ID of the parent folder. Use empty string for root level. Must be a valid folder ID from listFiles.'
-        ),
-      files: z
-        .array(
-          z.object({
-            name: z.string().describe('The file name including extension'),
-            content: z.string().describe('The file content'),
-          })
-        )
-        .describe('Array of files to create'),
-    }),
+      'Create multiple files at once in the same folder. Use this to batch create files that share the same parent folder. More efficient than creating files one by one.',
+    parameters: createFilesParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = createFilesParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { parentId, files } = parsedParams.data;

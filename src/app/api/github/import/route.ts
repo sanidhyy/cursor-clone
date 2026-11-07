@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { z } from 'zod';
+
+import { importGitHubRequestSchema } from '@/features/projects/schemas/github';
 
 import { api } from '@/../convex/_generated/api';
 import {
@@ -14,10 +15,6 @@ import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
 import { parseGitHubUrl } from '@/lib/utils';
-
-const requestSchema = z.object({
-  url: z.url(),
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,9 +29,12 @@ export async function POST(req: NextRequest) {
       );
 
     const body = await req.json();
-    const { data, error } = requestSchema.safeParse(body);
+    const { data, error } = importGitHubRequestSchema.safeParse(body);
     if (!data || error)
-      return NextResponse.json({ error: 'Invalid Request' }, { status: BAD_REQUEST });
+      return NextResponse.json(
+        { error: error?.issues[0]?.message || 'Invalid Request' },
+        { status: BAD_REQUEST }
+      );
 
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
     const { url } = data;

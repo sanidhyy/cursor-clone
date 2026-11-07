@@ -1,6 +1,8 @@
 import { cn } from 'cn';
 import { formatDistanceToNow } from 'date-fns';
 
+import { githubRepositoryUrlSchema } from '@/features/projects/schemas/github';
+
 export { cn }; // Fallback for old shadcn components
 
 export const formatTimestamp = (timestamp: number) => {
@@ -8,8 +10,9 @@ export const formatTimestamp = (timestamp: number) => {
 };
 
 export const parseGitHubUrl = (url: string) => {
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (!match) return null;
+  const result = githubRepositoryUrlSchema.safeParse(url);
+  if (!result.success) return null;
 
-  return { owner: match[1], repo: match[2].replace(/\.git$/, '') };
+  const [, owner, repo] = new URL(result.data).pathname.replace(/\/$/, '').split('/');
+  return { owner, repo: repo.replace(/\.git$/, '') };
 };

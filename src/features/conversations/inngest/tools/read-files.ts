@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { readFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -10,21 +11,13 @@ interface ReadFilesToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  fileIds: z
-    .array(z.string().trim().min(1, 'File id cannot be empty'))
-    .min(1, 'Provide at least one file id'),
-});
-
 export const createReadFilesTool = ({ internalKey, projectId }: ReadFilesToolOptions) => {
   return createTool({
     name: 'readFiles',
     description: 'Read the content of files from the project. Returns file contents.',
-    parameters: z.object({
-      fileIds: z.array(z.string()).describe('Array of file IDs to read'),
-    }),
+    parameters: readFilesParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = readFilesParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileIds } = parsedParams.data;

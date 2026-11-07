@@ -19,11 +19,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    const { data: validatedData, success: validatedDataSuccess } =
-      suggestionRequestSchema.safeParse(body);
+    const { data: validatedData, error: validationError } = suggestionRequestSchema.safeParse(body);
 
-    if (!validatedData || !validatedDataSuccess)
-      return NextResponse.json({ error: 'Invalid Request' }, { status: BAD_REQUEST });
+    if (!validatedData || validationError)
+      return NextResponse.json(
+        { error: validationError?.issues[0]?.message || 'Invalid Request' },
+        { status: BAD_REQUEST }
+      );
 
     const prompt = SUGGESTION_PROMPT(validatedData);
 

@@ -3,8 +3,10 @@ import { useState } from 'react';
 import { FileIcon, FolderIcon } from '@react-symbols/icons/utils';
 import { cn } from 'cn';
 import { ChevronRightIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { getItemPadding } from '@/features/projects/lib/utils';
+import { fileNameSchema } from '@/features/projects/schemas/files';
 import type { FileType } from '@/features/projects/types';
 
 interface RenameInputProps {
@@ -28,7 +30,12 @@ export const RenameInput = ({
 
   const handleSubmit = () => {
     const trimmedValue = value.trim() || defaultValue;
-    onSubmit(trimmedValue);
+    const result = fileNameSchema.safeParse(trimmedValue);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+    onSubmit(result.data);
   };
 
   return (

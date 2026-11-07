@@ -1,6 +1,9 @@
 import { v } from 'convex/values';
 
+import { previewSettingsSchema, projectNameSchema } from '@/features/projects/schemas';
+
 import { mutation, query } from '@/../convex/_generated/server';
+import { queryLimitSchema } from '@/schemas/common';
 
 import { verifyAuth } from './auth';
 
@@ -18,8 +21,12 @@ export const updateSettings = mutation({
     const project = await db.get('projects', projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
 
+    const validatedSettings = previewSettingsSchema.parse(settings);
     await db.patch('projects', projectId, {
-      settings,
+      settings: {
+        installCommand: validatedSettings.installCommand || undefined,
+        devCommand: validatedSettings.devCommand || undefined,
+      },
       updatedAt: Date.now(),
     });
   },
@@ -32,12 +39,12 @@ export const get = query({
   handler: async ({ auth, db }, { limit }) => {
     const user = await verifyAuth(auth);
 
-    if (!!limit) {
+    if (limit !== undefined) {
       return await db
         .query('projects')
         .withIndex('by_owner_updated_at', (q) => q.eq('ownerId', user.subject))
         .order('desc')
-        .take(limit);
+        .take(queryLimitSchema.parse(limit));
     }
 
     return await db
@@ -74,7 +81,7 @@ export const rename = mutation({
     if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
 
     await db.patch('projects', projectId, {
-      name: projectName,
+      name: projectNameSchema.parse(projectName),
       updatedAt: Date.now(),
     });
 

@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { renameFileParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -10,21 +11,13 @@ interface RenameFileToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  fileId: z.string().min(1, 'File id is required'),
-  newName: z.string().min(1, 'New name is required'),
-});
-
 export const createRenameFileTool = ({ internalKey, projectId }: RenameFileToolOptions) => {
   return createTool({
     name: 'renameFile',
     description: 'Rename a file or folder.',
-    parameters: z.object({
-      fileId: z.string().describe('The ID of the file or folder to rename'),
-      newName: z.string().describe('The new name for the file or folder'),
-    }),
+    parameters: renameFileParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = renameFileParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileId, newName } = parsedParams.data;

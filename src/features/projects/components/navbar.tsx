@@ -8,8 +8,10 @@ import { UserButton } from '@clerk/nextjs';
 import { cn } from 'cn';
 import { CloudCheckIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
+import { toast } from 'sonner';
 
 import { useProject, useRenameProject } from '@/features/projects/hooks/use-projects';
+import { projectNameSchema } from '@/features/projects/schemas';
 
 import {
   Breadcrumb,
@@ -53,7 +55,12 @@ export const Navbar = ({ projectId }: NavbarProps) => {
     const trimmedName = name.trim();
     if (!trimmedName || !project || trimmedName === project.name) return;
 
-    renameProject({ id: project._id, name: trimmedName });
+    const result = projectNameSchema.safeParse(name);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+    renameProject({ id: project._id, name: result.data });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import ky from 'ky';
 import { toast } from 'sonner';
 
+import { createProjectRequestSchema } from '@/features/projects/schemas';
+
 import type { Id } from '@/../convex/_generated/dataModel';
 import {
   PromptInput,
@@ -37,16 +39,18 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
   const router = useRouter();
 
   const handleSubmit = async (message: PromptInputMessage) => {
-    if (!message.text) return;
+    const request = createProjectRequestSchema.safeParse({ prompt: message.text });
+    if (!request.success) {
+      toast.error(request.error.issues[0].message);
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
       const { projectId } = await ky
         .post('/api/projects/create-with-prompt', {
-          json: {
-            prompt: message.text.trim(),
-          },
+          json: request.data,
         })
         .json<{ eventId: string; projectId: Id<'projects'> }>();
 
@@ -84,7 +88,7 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
           <PromptInputFooter>
             <PromptInputTools />
-            <PromptInputSubmit disabled={!input || isSubmitting} />
+            <PromptInputSubmit disabled={!input.trim() || isSubmitting} />
           </PromptInputFooter>
         </PromptInput>
       </DialogContent>

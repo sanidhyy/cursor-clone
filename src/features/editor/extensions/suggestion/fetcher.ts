@@ -15,10 +15,11 @@ export const fetcher = async (
   signal: AbortSignal
 ): Promise<string | null> => {
   try {
-    const { data: validatedPayload, success: validatedPayloadSuccess } =
+    const { data: validatedPayload, error: validationError } =
       suggestionRequestSchema.safeParse(payload);
 
-    if (!validatedPayload || !validatedPayloadSuccess) throw new Error('Invalid Request');
+    if (!validatedPayload || validationError)
+      throw new Error(validationError?.issues[0]?.message || 'Invalid Request');
 
     const response = await ky
       .post('/api/suggestion', {

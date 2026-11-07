@@ -1,5 +1,7 @@
 import { v } from 'convex/values';
 
+import { conversationTitleSchema } from '@/features/conversations/schemas';
+
 import { mutation, query } from '@/../convex/_generated/server';
 
 import { verifyAuth } from './auth';
@@ -17,7 +19,7 @@ export const create = mutation({
 
     const conversationId = await db.insert('conversations', {
       projectId,
-      title,
+      title: conversationTitleSchema.parse(title),
       updatedAt: Date.now(),
     });
 

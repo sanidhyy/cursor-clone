@@ -11,6 +11,8 @@ import {
   useCreateConversation,
   useMessages,
 } from '@/features/conversations/hooks/use-conversations';
+import { sendMessageRequestSchema } from '@/features/conversations/schemas';
+import { projectRequestSchema } from '@/features/projects/schemas';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 import {
@@ -28,6 +30,7 @@ import {
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input';
 import { Button } from '@/components/ui/button';
+import { promptSchema } from '@/schemas/common';
 
 import { ConversationMessage } from './conversation-message';
 import { PastConversationsDialog } from './past-conversations-dialog';
@@ -71,9 +74,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   const handleCancel = async () => {
     try {
       await ky.post('/api/messages/cancel', {
-        json: {
-          projectId,
-        },
+        json: projectRequestSchema.parse({ projectId }),
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to cancel request');
@@ -87,6 +88,12 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
       return;
     }
 
+    const text = promptSchema.safeParse(message.text);
+    if (!text.success) {
+      toast.error(text.error.issues[0].message);
+      return;
+    }
+
     let conversationId = activeConversationId;
     if (!conversationId) {
       conversationId = await handleCreateConversation();
@@ -95,10 +102,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
 
     try {
       await ky.post('/api/messages', {
-        json: {
-          conversationId,
-          message: message.text,
-        },
+        json: sendMessageRequestSchema.parse({ conversationId, message: text.data }),
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Message failed to send');

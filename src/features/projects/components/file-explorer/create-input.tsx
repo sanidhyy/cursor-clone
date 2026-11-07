@@ -2,8 +2,10 @@ import { useState } from 'react';
 
 import { FileIcon, FolderIcon } from '@react-symbols/icons/utils';
 import { ChevronRightIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { getItemPadding } from '@/features/projects/lib/utils';
+import { fileNameSchema } from '@/features/projects/schemas/files';
 import type { FileType } from '@/features/projects/types';
 
 interface CreateInputProps {
@@ -18,8 +20,13 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
 
   const handleSubmit = () => {
     const trimmedValue = value.trim();
-    if (!!trimmedValue) onSubmit(trimmedValue);
-    else onCancel();
+    if (!trimmedValue) return onCancel();
+    const result = fileNameSchema.safeParse(value);
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
+    onSubmit(result.data);
   };
 
   return (

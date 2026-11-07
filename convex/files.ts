@@ -1,5 +1,7 @@
 import { v } from 'convex/values';
 
+import { fileContentSchema, fileNameSchema } from '@/features/projects/schemas/files';
+
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 
@@ -107,7 +109,7 @@ export const createFile = mutation({
   },
   handler: async ({ auth, db }, { projectId, parentId, name, content }) => {
     const now = Date.now();
-    const trimmedName = name.trim();
+    const trimmedName = fileNameSchema.parse(name);
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
@@ -132,7 +134,7 @@ export const createFile = mutation({
     await db.insert('files', {
       projectId,
       name: trimmedName,
-      content,
+      content: fileContentSchema.parse(content),
       parentId,
       type: 'file',
       updatedAt: now,
@@ -152,7 +154,7 @@ export const createFolder = mutation({
   },
   handler: async ({ auth, db }, { projectId, parentId, name }) => {
     const now = Date.now();
-    const trimmedName = name.trim();
+    const trimmedName = fileNameSchema.parse(name);
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
@@ -195,7 +197,7 @@ export const renameFile = mutation({
   },
   handler: async ({ auth, db }, { id: fileId, newName }) => {
     const now = Date.now();
-    const trimmedNewName = newName.trim();
+    const trimmedNewName = fileNameSchema.parse(newName);
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
@@ -292,7 +294,7 @@ export const updateFile = mutation({
     if (!project || project.ownerId !== user.subject) throw new Error('File not found');
 
     await db.patch('files', fileId, {
-      content,
+      content: fileContentSchema.parse(content),
       updatedAt: now,
     });
 

@@ -5,7 +5,8 @@ import { useClerk } from '@clerk/nextjs';
 import { useForm } from '@tanstack/react-form';
 import ky, { HTTPError } from 'ky';
 import { toast } from 'sonner';
-import { z } from 'zod';
+
+import { importGitHubRequestSchema } from '@/features/projects/schemas/github';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
@@ -19,10 +20,6 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-
-const formSchema = z.object({
-  url: z.url('Please enter a valid URL'),
-});
 
 interface ImportGitHubDialogProps {
   open: boolean;
@@ -38,13 +35,13 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
       url: '',
     },
     validators: {
-      onSubmit: formSchema,
+      onSubmit: importGitHubRequestSchema,
     },
     onSubmit: async ({ value }) => {
       try {
         const { projectId } = await ky
           .post('/api/github/import', {
-            json: { url: value.url },
+            json: importGitHubRequestSchema.parse(value),
           })
           .json<{ eventId: string; projectId: Id<'projects'> }>();
 

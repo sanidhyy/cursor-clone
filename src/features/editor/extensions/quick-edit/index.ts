@@ -105,7 +105,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
             currentAbortController.signal
           );
 
-          if (editedCode) {
+          if (editedCode !== null) {
             editorView.dispatch({
               changes: {
                 from: selection.from,

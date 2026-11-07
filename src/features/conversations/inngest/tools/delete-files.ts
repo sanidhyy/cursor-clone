@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { deleteFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
@@ -10,22 +11,14 @@ interface DeleteFilesToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  fileIds: z
-    .array(z.string().min(1, 'File ID cannot be empty'))
-    .min(1, 'Provide at least one file ID'),
-});
-
 export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToolOptions) => {
   return createTool({
     name: 'deleteFiles',
     description:
-      'Delete files of folders from the project. If deleting a folder, all contents will be deleted recursively.',
-    parameters: z.object({
-      fileIds: z.array(z.string()).describe('Array of file or folder IDs to delete'),
-    }),
+      'Delete files or folders from the project. If deleting a folder, all contents will be deleted recursively.',
+    parameters: deleteFilesParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = deleteFilesParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileIds } = parsedParams.data;

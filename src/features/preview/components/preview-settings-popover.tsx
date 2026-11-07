@@ -5,20 +5,15 @@ import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { cn } from 'cn';
 import { SettingsIcon } from 'lucide-react';
-import { z } from 'zod';
 
 import { useUpdateProjectSettings } from '@/features/projects/hooks/use-projects';
+import { previewSettingsFormSchema } from '@/features/projects/schemas';
 
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-const formSchema = z.object({
-  installCommand: z.string(),
-  devCommand: z.string(),
-});
 
 interface PreviewSettingsPopoverProps {
   projectId: Id<'projects'>;
@@ -40,14 +35,15 @@ export const PreviewSettingsPopover = ({
       devCommand: initialValues?.devCommand || '',
     },
     validators: {
-      onSubmit: formSchema,
+      onSubmit: previewSettingsFormSchema,
     },
     onSubmit: async ({ value }) => {
+      const settings = previewSettingsFormSchema.parse(value);
       await updateSettings({
         id: projectId,
         settings: {
-          installCommand: value.installCommand || undefined,
-          devCommand: value.devCommand || undefined,
+          installCommand: settings.installCommand || undefined,
+          devCommand: settings.devCommand || undefined,
         },
       });
 
@@ -107,6 +103,7 @@ export const PreviewSettingsPopover = ({
                   />
 
                   <FieldDescription>Command to install dependencies</FieldDescription>
+                  <FieldError errors={field.state.meta.errors} />
                 </Field>
               )}
             </form.Field>
@@ -126,6 +123,7 @@ export const PreviewSettingsPopover = ({
                   />
 
                   <FieldDescription>Command to start the development server</FieldDescription>
+                  <FieldError errors={field.state.meta.errors} />
                 </Field>
               )}
             </form.Field>

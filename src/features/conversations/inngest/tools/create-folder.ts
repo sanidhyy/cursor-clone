@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { createFolderParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -10,25 +11,13 @@ interface CreateFolderToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  name: z.string().min(1, 'Folder name is required'),
-  parentId: z.string(),
-});
-
 export const createCreateFolderTool = ({ internalKey, projectId }: CreateFolderToolOptions) => {
   return createTool({
     name: 'createFolder',
     description: 'Create a new folder in the project',
-    parameters: z.object({
-      name: z.string().describe('The name of the folder to create'),
-      parentId: z
-        .string()
-        .describe(
-          'The ID (not name!) of the parent folder from listFiles, or empty string for root level'
-        ),
-    }),
+    parameters: createFolderParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = createFolderParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { name, parentId } = parsedParams.data;

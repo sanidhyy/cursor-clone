@@ -1,5 +1,6 @@
 import { createTool } from '@inngest/agent-kit';
-import { z } from 'zod';
+
+import { updateFileParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -10,21 +11,13 @@ interface UpdateFileToolOptions {
   projectId: Id<'projects'>;
 }
 
-const paramsSchema = z.object({
-  fileId: z.string().min(1, 'File id is required'),
-  content: z.string(),
-});
-
 export const createUpdateFileTool = ({ internalKey, projectId }: UpdateFileToolOptions) => {
   return createTool({
     name: 'updateFile',
     description: 'Update the content of an existing file.',
-    parameters: z.object({
-      fileId: z.string().describe('The ID of the file to update'),
-      content: z.string().describe('The new content for the file'),
-    }),
+    parameters: updateFileParamsSchema,
     handler: async (params, { step: toolStep }) => {
-      const parsedParams = paramsSchema.safeParse(params);
+      const parsedParams = updateFileParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileId, content } = parsedParams.data;

@@ -7,9 +7,13 @@ import ky, { HTTPError } from 'ky';
 import { CheckCheckIcon, CheckCircle2Icon, ExternalLinkIcon, XCircleIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { z } from 'zod';
 
 import { useProject } from '@/features/projects/hooks/use-projects';
+import { projectRequestSchema } from '@/features/projects/schemas';
+import {
+  exportGitHubFormSchema,
+  exportGitHubRequestSchema,
+} from '@/features/projects/schemas/github';
 
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -24,19 +28,6 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-
-const formSchema = z.object({
-  repoName: z
-    .string()
-    .min(1, 'Repository name is required')
-    .max(100, 'Repository name is too long')
-    .regex(
-      /^[a-zA-Z0-9._-]+$/,
-      'Only alphanumeric characters, hyphens, underscores, and dots are allowed'
-    ),
-  visibility: z.enum(['public', 'private']),
-  description: z.string().max(350, 'Description is too long'),
-});
 
 interface ExportGitHubPopoverProps {
   projectId: string;
@@ -61,17 +52,18 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
       description: '',
     },
     validators: {
-      onSubmit: formSchema,
+      onSubmit: exportGitHubFormSchema,
     },
-    onSubmit: async ({ value: { repoName, visibility, description } }) => {
+    onSubmit: async ({ value }) => {
+      const { repoName, visibility, description } = exportGitHubFormSchema.parse(value);
       try {
         await ky.post('/api/github/export', {
-          json: {
+          json: exportGitHubRequestSchema.parse({
             projectId,
             repoName,
             visibility,
             description: description || undefined,
-          },
+          }),
         });
       } catch (error) {
         if (error instanceof HTTPError) {
@@ -105,13 +97,13 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
 
   const handleCancelExport = async () => {
     await ky.post('/api/github/export/cancel', {
-      json: { projectId },
+      json: projectRequestSchema.parse({ projectId }),
     });
   };
 
   const handleResetExport = async () => {
     await ky.post('/api/github/export/reset', {
-      json: { projectId },
+      json: projectRequestSchema.parse({ projectId }),
     });
     setOpen(false);
   };
