@@ -18,10 +18,21 @@ interface CodeEditorProps {
   fileName: string;
   initialValue?: string;
   onChange: (value: string) => void;
+  onAddToChat: (code: string) => void;
 }
 
-export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditorProps) => {
+export const CodeEditor = ({
+  fileName,
+  initialValue = '',
+  onChange,
+  onAddToChat,
+}: CodeEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const onAddToChatRef = useRef(onAddToChat);
+
+  useEffect(() => {
+    onAddToChatRef.current = onAddToChat;
+  }, [onAddToChat]);
 
   const languageExtension = useMemo(() => getLanguageExtension(fileName), [fileName]);
 
@@ -38,7 +49,7 @@ export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditor
         languageExtension,
         suggestion(fileName),
         quickEdit(fileName),
-        selectionTooltip(),
+        selectionTooltip((code) => onAddToChatRef.current(code)),
         keymap.of([
           { key: 'Tab', run: insertTab },
           { key: 'Shift-Tab', run: indentLess },

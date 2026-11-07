@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       );
 
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
-    const { conversationId, message } = data;
+    const { conversationId, message, context } = data;
 
     const conversation = await convex.query(api.system.getConversationById, {
       conversationId: conversationId as Id<'conversations'>,
@@ -41,6 +41,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: NOT_FOUND });
 
     const projectId = conversation.projectId;
+
+    for (const item of context) {
+      const file = await convex.query(api.system.getFileById, {
+        internalKey,
+        projectId,
+        fileId: item.fileId as Id<'files'>,
+      });
+      if (!file || file.type !== 'file' || file.storageId)
+        return NextResponse.json({ error: 'Context file not found' }, { status: NOT_FOUND });
+    }
 
     const processingMessages = await convex.query(api.system.processingMessages, {
       internalKey,
@@ -72,6 +82,7 @@ export async function POST(req: NextRequest) {
       projectId,
       role: 'user',
       content: message,
+      context: context.map((item) => ({ ...item, fileId: item.fileId as Id<'files'> })),
     });
 
     const assistantMessageId = await convex.mutation(api.system.createMessage, {

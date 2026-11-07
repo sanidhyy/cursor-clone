@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { LAST_RECENT_MESSAGES } from '@/features/conversations/constants';
-import { conversationTitleSchema } from '@/features/conversations/schemas';
+import { codeContextsSchema, conversationTitleSchema } from '@/features/conversations/schemas';
 import { projectNameSchema } from '@/features/projects/schemas';
 import {
   fileContentSchema,
@@ -13,7 +13,7 @@ import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 import { codeSchema, promptSchema, queryLimitSchema } from '@/schemas/common';
 
-import { messageStatusValidator } from './validators';
+import { codeContextValidator, messageStatusValidator } from './validators';
 
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
@@ -59,16 +59,30 @@ export const createMessage = mutation({
     projectId: v.id('projects'),
     role: v.union(v.literal('user'), v.literal('assistant')),
     content: v.string(),
+    context: v.optional(v.array(codeContextValidator)),
     status: v.optional(messageStatusValidator),
   },
-  handler: async ({ db }, { internalKey, conversationId, projectId, role, content, status }) => {
+  handler: async (
+    { db },
+    { internalKey, conversationId, projectId, role, content, status, context }
+  ) => {
     validateInternalKey(internalKey);
+
+    const validatedContext = codeContextsSchema.parse(context ?? []);
+    for (const item of validatedContext) {
+      const file = await db.get('files', item.fileId as Id<'files'>);
+      if (!file || file.projectId !== projectId || file.type !== 'file' || file.storageId)
+        throw new Error('Context file not found');
+    }
 
     const messageId = await db.insert('messages', {
       conversationId,
       projectId,
       role,
       content: role === 'user' ? promptSchema.parse(content) : codeSchema.parse(content),
+      context: validatedContext.length
+        ? validatedContext.map((item) => ({ ...item, fileId: item.fileId as Id<'files'> }))
+        : undefined,
       status,
     });
 

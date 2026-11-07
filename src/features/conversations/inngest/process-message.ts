@@ -16,6 +16,7 @@ import { createReadFilesTool } from '@/features/conversations/inngest/tools/read
 import { createRenameFileTool } from '@/features/conversations/inngest/tools/rename-file';
 import { createScrapeUrlsTool } from '@/features/conversations/inngest/tools/scrape-urls';
 import { createUpdateFileTool } from '@/features/conversations/inngest/tools/update-file';
+import { formatMessageWithContext } from '@/features/conversations/lib/utils';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -207,12 +208,12 @@ export const processMessage = inngest.createFunction(
           ...recentMessages.map((item) => ({
             type: 'text' as const,
             role: item.role,
-            content: item.content,
+            content: formatMessageWithContext(item.content, item.context),
           })),
           {
             type: 'text',
             role: 'user',
-            content: userMessage.content,
+            content: formatMessageWithContext(userMessage.content, userMessage.context),
           },
         ],
       }

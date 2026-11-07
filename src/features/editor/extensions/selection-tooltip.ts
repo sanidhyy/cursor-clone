@@ -6,7 +6,10 @@ import { quickEditState, showQuickEditEffect } from './quick-edit';
 
 let editorView: CodeMirrorEditorView | null = null;
 
-const createTooltipForSelection = (state: EditorState): readonly Tooltip[] => {
+const createTooltipForSelection = (
+  state: EditorState,
+  onAddToChat: (code: string) => void
+): readonly Tooltip[] => {
   const selection = state.selection.main;
 
   if (selection.empty) return [];
@@ -28,6 +31,8 @@ const createTooltipForSelection = (state: EditorState): readonly Tooltip[] => {
         const addToChatButton = document.createElement('button');
         addToChatButton.textContent = 'Add to Chat';
         addToChatButton.className = 'font-sans py-1 px-2 hover:bg-foreground/10 rounded-sm';
+        addToChatButton.onclick = () =>
+          onAddToChat(state.doc.sliceString(selection.from, selection.to));
 
         const quickEditButton = document.createElement('button');
         quickEditButton.className =
@@ -56,22 +61,24 @@ const createTooltipForSelection = (state: EditorState): readonly Tooltip[] => {
   ];
 };
 
-const selectionTooltipField = StateField.define<readonly Tooltip[]>({
-  create: (state) => createTooltipForSelection(state),
-  update: (tooltips, transaction) => {
-    if (transaction.docChanged || transaction.selection)
-      return createTooltipForSelection(transaction.state);
+export const selectionTooltip = (onAddToChat: (code: string) => void) => [
+  StateField.define<readonly Tooltip[]>({
+    create: (state) => createTooltipForSelection(state, onAddToChat),
+    update: (tooltips, transaction) => {
+      if (transaction.docChanged || transaction.selection)
+        return createTooltipForSelection(transaction.state, onAddToChat);
 
-    for (const effect of transaction.effects)
-      if (effect.is(showQuickEditEffect)) return createTooltipForSelection(transaction.state);
+      for (const effect of transaction.effects)
+        if (effect.is(showQuickEditEffect))
+          return createTooltipForSelection(transaction.state, onAddToChat);
 
-    return tooltips;
-  },
-  provide: (field) => showTooltip.computeN([field], (state) => state.field(field)),
-});
+      return tooltips;
+    },
+    provide: (field) => showTooltip.computeN([field], (state) => state.field(field)),
+  }),
+  captureViewExtension,
+];
 
 const captureViewExtension = CodeMirrorEditorView.updateListener.of(
   (update) => (editorView = update.view)
 );
-
-export const selectionTooltip = () => [selectionTooltipField, captureViewExtension];

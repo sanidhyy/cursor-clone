@@ -14,6 +14,8 @@ import {
 } from '@/components/ai-elements/message';
 import { Spinner } from '@/components/ui/spinner';
 
+import { CodeContexts } from './code-contexts';
+
 interface ConversationMessageProps {
   data: Doc<'messages'>;
 }
@@ -38,6 +40,7 @@ export const ConversationMessage = ({ data: message }: ConversationMessageProps)
   return (
     <Message key={message._id} from={message.role} className='group'>
       <MessageContent>
+        {!!message.context?.length && <CodeContexts context={message.context} />}
         {message.status === 'processing' ? (
           <div className='flex items-center gap-2 text-muted-foreground'>
             <Spinner />

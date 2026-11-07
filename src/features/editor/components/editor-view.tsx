@@ -2,10 +2,12 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 
 import { AlertTriangleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { useChatStore } from '@/features/conversations/store/use-chat-store';
 import { DEBOUNCE_MS } from '@/features/editor/constants';
 import { useEditor } from '@/features/editor/hooks/use-editor';
-import { useFile, useFiles, useUpdateFile } from '@/features/projects/hooks/use-files';
+import { useFile, useFilePath, useFiles, useUpdateFile } from '@/features/projects/hooks/use-files';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 
@@ -21,6 +23,7 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
   const { activeTabId, openTabs, closeTab } = useEditor(projectId as Id<'projects'>);
   const files = useFiles(projectId as Id<'projects'>);
   const activeFile = useFile(activeTabId);
+  const filePath = useFilePath(activeTabId);
   const updateFile = useUpdateFile();
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -71,6 +74,20 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
             key={activeFile._id}
             fileName={activeFile.name}
             initialValue={activeFile.content}
+            onAddToChat={(code) => {
+              try {
+                useChatStore.getState().addContext(projectId as Id<'projects'>, {
+                  fileId: activeFile._id,
+                  path: filePath?.map((part) => part.name).join('/') || activeFile.name,
+                  code,
+                });
+                document.getElementById(`chat-input-${projectId}`)?.focus();
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : 'Unable to add selection to chat'
+                );
+              }
+            }}
             onChange={(content: string) => {
               if (timeoutRef.current) clearTimeout(timeoutRef.current);
 

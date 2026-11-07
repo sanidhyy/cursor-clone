@@ -12,6 +12,7 @@ import {
   useMessages,
 } from '@/features/conversations/hooks/use-conversations';
 import { sendMessageRequestSchema } from '@/features/conversations/schemas';
+import { useChatStore } from '@/features/conversations/store/use-chat-store';
 import { projectRequestSchema } from '@/features/projects/schemas';
 
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -32,6 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { promptSchema } from '@/schemas/common';
 
+import { CodeContexts } from './code-contexts';
 import { ConversationMessage } from './conversation-message';
 import { PastConversationsDialog } from './past-conversations-dialog';
 
@@ -40,7 +42,8 @@ interface ConversationSidebarProps {
 }
 
 export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => {
-  const [input, setInput] = useState('');
+  const draftProjectId = projectId as Id<'projects'>;
+  const { input, context } = useChatStore((state) => state.getDraft(draftProjectId));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionPending = useRef(false);
   const [selectedConversationId, setSelectedConversationId] = useState<Id<'conversations'> | null>(
@@ -93,6 +96,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
 
     submissionPending.current = true;
     setIsSubmitting(true);
+    const submittedContext = useChatStore.getState().getDraft(draftProjectId).context;
     try {
       const conversationId = activeConversationId || (await handleCreateConversation());
       if (!conversationId) return false;
@@ -100,9 +104,10 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
         json: sendMessageRequestSchema.parse({
           conversationId,
           message: text.data,
+          context: submittedContext,
         }),
       });
-      setInput((current) => (current === message.text ? '' : current));
+      useChatStore.getState().clearSubmitted(draftProjectId, message.text, submittedContext);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Message failed to send');
       return false;
@@ -159,10 +164,15 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
         </Conversation>
 
         <div className='p-3'>
+          <CodeContexts
+            context={context}
+            onRemove={(index) => useChatStore.getState().removeContext(draftProjectId, index)}
+          />
           <PromptInput onSubmit={handleSubmit} className='mt-2'>
             <PromptInputBody>
               <PromptInputTextarea
-                onChange={(e) => setInput(e.target.value)}
+                id={`chat-input-${projectId}`}
+                onChange={(e) => useChatStore.getState().setInput(draftProjectId, e.target.value)}
                 value={input}
                 disabled={isProcessing}
                 placeholder='Ask Polaris anything...'
