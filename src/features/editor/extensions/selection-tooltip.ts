@@ -1,10 +1,11 @@
-import { EditorState, StateField } from '@codemirror/state';
-import { showTooltip, type Tooltip } from '@codemirror/view';
+import { EditorState, StateEffect, StateField } from '@codemirror/state';
+import { showTooltip, ViewPlugin, type Tooltip, type ViewUpdate } from '@codemirror/view';
 import { EditorView as CodeMirrorEditorView } from 'codemirror';
 
 import { quickEditState, showQuickEditEffect } from './quick-edit';
 
-let editorView: CodeMirrorEditorView | null = null;
+const SELECTION_TOOLTIP_DELAY = 250;
+const showSelectionTooltip = StateEffect.define<boolean>();
 
 const createTooltipForSelection = (
   state: EditorState,
@@ -24,7 +25,7 @@ const createTooltipForSelection = (
       above: false,
       strictSide: false,
 
-      create: () => {
+      create: (view) => {
         const dom = document.createElement('div');
 
         dom.className =
@@ -55,7 +56,7 @@ const createTooltipForSelection = (
         quickEditButton.appendChild(quickEditButtonShortcut);
 
         quickEditButton.onclick = () => {
-          if (editorView) editorView.dispatch({ effects: showQuickEditEffect.of(true) });
+          view.dispatch({ effects: showQuickEditEffect.of(true) });
         };
 
         dom.appendChild(addToChatButton);
@@ -69,24 +70,96 @@ const createTooltipForSelection = (
 
 export const selectionTooltip = (onAddToChat: (code: string) => void) => [
   StateField.define<readonly Tooltip[]>({
-    create: (state) => createTooltipForSelection(state, onAddToChat),
+    create: () => [],
 
     update: (tooltips, transaction) => {
-      if (transaction.docChanged || transaction.selection)
-        return createTooltipForSelection(transaction.state, onAddToChat);
+      if (transaction.docChanged || transaction.selection) return [];
 
       for (const effect of transaction.effects)
-        if (effect.is(showQuickEditEffect))
-          return createTooltipForSelection(transaction.state, onAddToChat);
+        if (effect.is(showQuickEditEffect)) return [];
+        else if (effect.is(showSelectionTooltip))
+          return effect.value ? createTooltipForSelection(transaction.state, onAddToChat) : [];
 
       return tooltips;
     },
 
     provide: (field) => showTooltip.computeN([field], (state) => state.field(field)),
   }),
-  captureViewExtension,
+  selectionIdlePlugin,
 ];
 
-const captureViewExtension = CodeMirrorEditorView.updateListener.of(
-  (update) => (editorView = update.view)
+const selectionIdlePlugin = ViewPlugin.fromClass(
+  class {
+    private timer: ReturnType<typeof setTimeout> | null = null;
+    private selecting = false;
+    private readonly ownerWindow: Window;
+
+    constructor(private readonly view: CodeMirrorEditorView) {
+      this.ownerWindow = view.dom.ownerDocument.defaultView!;
+      this.ownerWindow.addEventListener('pointerup', this.finishSelection);
+      this.ownerWindow.addEventListener('pointercancel', this.finishSelection);
+      this.ownerWindow.addEventListener('blur', this.finishSelection);
+      this.schedule();
+    }
+
+    private cancelTimer() {
+      if (this.timer !== null) clearTimeout(this.timer);
+      this.timer = null;
+    }
+
+    private schedule() {
+      this.cancelTimer();
+      if (
+        this.selecting ||
+        this.view.state.selection.main.empty ||
+        this.view.state.field(quickEditState)
+      )
+        return;
+
+      this.timer = setTimeout(() => {
+        this.timer = null;
+        this.view.dispatch({ effects: showSelectionTooltip.of(true) });
+      }, SELECTION_TOOLTIP_DELAY);
+    }
+
+    startSelection(event: PointerEvent) {
+      // Keep the toolbar available when clicking either of its actions.
+      if (event.target instanceof Element && event.target.closest('.cm-tooltip')) return;
+
+      this.selecting = true;
+      this.cancelTimer();
+      this.view.dispatch({ effects: showSelectionTooltip.of(false) });
+    }
+
+    private finishSelection = () => {
+      if (!this.selecting) return;
+      this.selecting = false;
+      this.schedule();
+    };
+
+    update(update: ViewUpdate) {
+      if (
+        update.docChanged ||
+        update.selectionSet ||
+        update.transactions.some((transaction) =>
+          transaction.effects.some((effect) => effect.is(showQuickEditEffect))
+        )
+      )
+        this.schedule();
+    }
+
+    destroy() {
+      this.cancelTimer();
+      this.ownerWindow.removeEventListener('pointerup', this.finishSelection);
+      this.ownerWindow.removeEventListener('pointercancel', this.finishSelection);
+      this.ownerWindow.removeEventListener('blur', this.finishSelection);
+    }
+  },
+  {
+    eventHandlers: {
+      pointerdown(event) {
+        this.startSelection(event);
+      },
+    },
+  }
 );
