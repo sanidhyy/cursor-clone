@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { WebContainer } from '@webcontainer/api';
 
-import { buildFileTree, syncFileSystem } from '@/features/preview/lib/utils';
+import { buildFileTree, syncFileSystem, type PreviewFile } from '@/features/preview/lib/utils';
 import { useFiles } from '@/features/projects/hooks/use-files';
 
-import type { Doc, Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 
 let webcontainerInstance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
@@ -52,7 +52,7 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
 
   const containerRef = useRef<WebContainer | null>(null);
   const hasStartedRef = useRef(false);
-  const mountedFilesRef = useRef<Doc<'files'>[] | null>(null);
+  const mountedFilesRef = useRef<PreviewFile[] | null>(null);
   const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const files = useFiles(projectId);
@@ -74,7 +74,7 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
         const container = await getWebContainer();
         containerRef.current = container;
 
-        const fileTree = buildFileTree(files);
+        const fileTree = await buildFileTree(files);
         await container.mount(fileTree);
         mountedFilesRef.current = files;
 

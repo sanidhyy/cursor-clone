@@ -11,7 +11,7 @@ export const getFiles = query({
   args: {
     projectId: v.id('projects'),
   },
-  handler: async ({ auth, db }, { projectId }) => {
+  handler: async ({ auth, db, storage }, { projectId }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
@@ -22,7 +22,12 @@ export const getFiles = query({
       .withIndex('by_project', (q) => q.eq('projectId', projectId))
       .collect();
 
-    return files;
+    return await Promise.all(
+      files.map(async (file) => ({
+        ...file,
+        storageUrl: file.storageId ? await storage.getUrl(file.storageId) : null,
+      }))
+    );
   },
 });
 

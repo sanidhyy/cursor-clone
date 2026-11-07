@@ -1,13 +1,23 @@
 import type { FileSystemTree, WebContainer } from '@webcontainer/api';
+import ky from 'ky';
 
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
 
 type FileDoc = Doc<'files'>;
 
+export type PreviewFile = FileDoc & { storageUrl: string | null };
+
+const getFileContents = async (file: PreviewFile): Promise<string | Uint8Array> => {
+  if (!file.storageId) return file.content ?? '';
+  if (!file.storageUrl) throw new Error(`Unable to load binary file: ${file.name}`);
+
+  return new Uint8Array(await ky.get(file.storageUrl).arrayBuffer());
+};
+
 /*
  * Convert flat Convex files to nested FileSystemTree for WebContainer
  */
-export const buildFileTree = (files: FileDoc[]): FileSystemTree => {
+export const buildFileTree = async (files: PreviewFile[]): Promise<FileSystemTree> => {
   const tree: FileSystemTree = Object.create(null);
   const filesMap = new Map(files.map((file) => [file._id, file]));
 
@@ -36,7 +46,7 @@ export const buildFileTree = (files: FileDoc[]): FileSystemTree => {
 
       if (isLast) {
         if (file.type === 'folder') current[part] ??= { directory: Object.create(null) };
-        else if (!file.storageId) current[part] = { file: { contents: file.content ?? '' } };
+        else current[part] = { file: { contents: await getFileContents(file) } };
       } else {
         if (!current[part]) current[part] = { directory: Object.create(null) };
 
@@ -69,14 +79,12 @@ export const getFilePath = (file: FileDoc, filesMap: Map<Id<'files'>, FileDoc>):
 
 export const syncFileSystem = async (
   fs: WebContainer['fs'],
-  previousFiles: FileDoc[],
-  files: FileDoc[]
+  previousFiles: PreviewFile[],
+  files: PreviewFile[]
 ) => {
-  const getEntries = (items: FileDoc[]) => {
+  const getEntries = (items: PreviewFile[]) => {
     const filesMap = new Map(items.map((file) => [file._id, file]));
-    return new Map(
-      items.filter((file) => !file.storageId).map((file) => [getFilePath(file, filesMap), file])
-    );
+    return new Map(items.map((file) => [getFilePath(file, filesMap), file]));
   };
 
   const previous = getEntries(previousFiles);
@@ -95,10 +103,15 @@ export const syncFileSystem = async (
   for (const [path, file] of current) {
     if (file.type !== 'file') continue;
     const oldFile = previous.get(path);
-    if (oldFile?.type === 'file' && oldFile.content === file.content) continue;
+    if (
+      oldFile?.type === 'file' &&
+      oldFile.content === file.content &&
+      oldFile.storageId === file.storageId
+    )
+      continue;
 
     const parentPath = path.split('/').slice(0, -1).join('/');
     if (parentPath) await fs.mkdir(parentPath, { recursive: true });
-    await fs.writeFile(path, file.content ?? '');
+    await fs.writeFile(path, await getFileContents(file));
   }
 };
