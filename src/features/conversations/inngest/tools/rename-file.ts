@@ -22,16 +22,16 @@ export const createRenameFileTool = ({ internalKey, projectId }: RenameFileToolO
 
       const { fileId, newName } = parsedParams.data;
 
-      const file = await convex.query(api.system.getFileById, {
-        internalKey,
-        projectId,
-        fileId: fileId as Id<'files'>,
-      });
-      if (!file)
-        return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
-
       try {
         return await toolStep?.run('rename-file', async () => {
+          const file = await convex.query(api.system.getFileById, {
+            internalKey,
+            projectId,
+            fileId: fileId as Id<'files'>,
+          });
+          if (!file)
+            return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
+
           await convex.mutation(api.system.renameFile, {
             internalKey,
             projectId,

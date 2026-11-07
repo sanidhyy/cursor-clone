@@ -26,23 +26,35 @@ export const createReadFilesTool = ({ internalKey, projectId }: ReadFilesToolOpt
         return await toolStep?.run('read-files', async () => {
           const results: {
             id: string;
-            name: string;
-            content: string;
+            name?: string;
+            content?: string;
+            error?: string;
           }[] = [];
 
           for (const fileId of fileIds) {
-            const file = await convex.query(api.system.getFileById, {
-              internalKey,
-              projectId,
-              fileId: fileId as Id<'files'>,
-            });
-
-            if (file && file.content)
-              results.push({ id: file._id, name: file.name, content: file.content });
+            try {
+              const file = await convex.query(api.system.getFileById, {
+                internalKey,
+                projectId,
+                fileId: fileId as Id<'files'>,
+              });
+              if (!file) results.push({ id: fileId, error: 'File not found' });
+              else if (file.type === 'folder')
+                results.push({ id: fileId, name: file.name, error: 'This is a folder' });
+              else if (file.storageId)
+                results.push({
+                  id: fileId,
+                  name: file.name,
+                  error: 'Binary files cannot be read as text',
+                });
+              else results.push({ id: fileId, name: file.name, content: file.content ?? '' });
+            } catch (error) {
+              results.push({
+                id: fileId,
+                error: error instanceof Error ? error.message : 'Unable to read file',
+              });
+            }
           }
-
-          if (!results.length)
-            return `Error: No files found with provided IDs. Use listFiles to get valid fileIDs.`;
 
           return JSON.stringify(results);
         });

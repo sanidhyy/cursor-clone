@@ -22,18 +22,20 @@ export const createUpdateFileTool = ({ internalKey, projectId }: UpdateFileToolO
 
       const { fileId, content } = parsedParams.data;
 
-      const file = await convex.query(api.system.getFileById, {
-        internalKey,
-        projectId,
-        fileId: fileId as Id<'files'>,
-      });
-      if (!file)
-        return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
-      if (file.type === 'folder')
-        return `Error: "${fileId}" is a folder, not a file. You can only update file contents.`;
-
       try {
         return await toolStep?.run('update-file', async () => {
+          const file = await convex.query(api.system.getFileById, {
+            internalKey,
+            projectId,
+            fileId: fileId as Id<'files'>,
+          });
+          if (!file)
+            return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
+          if (file.type === 'folder')
+            return `Error: "${fileId}" is a folder, not a file. You can only update file contents.`;
+
+          if (file.storageId) return 'Error: Binary files cannot be updated as text.';
+
           await convex.mutation(api.system.updateFile, {
             internalKey,
             projectId,

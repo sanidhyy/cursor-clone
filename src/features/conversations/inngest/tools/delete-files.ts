@@ -3,7 +3,7 @@ import { createTool } from '@inngest/agent-kit';
 import { deleteFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
-import type { Doc, Id } from '@/../convex/_generated/dataModel';
+import type { Id } from '@/../convex/_generated/dataModel';
 import { convex } from '@/lib/convex-client';
 
 interface DeleteFilesToolOptions {
@@ -21,41 +21,37 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
       const parsedParams = deleteFilesParamsSchema.safeParse(params);
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
-      const { fileIds } = parsedParams.data;
-
-      const filesToDelete: { id: string; name: string; type: Doc<'files'>['type'] }[] = [];
-
-      for (const fileId of fileIds) {
-        const file = await convex.query(api.system.getFileById, {
-          internalKey,
-          projectId,
-          fileId: fileId as Id<'files'>,
-        });
-
-        if (!file)
-          return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
-
-        filesToDelete.push({
-          id: file._id,
-          name: file.name,
-          type: file.type,
-        });
-      }
-
       try {
         return await toolStep?.run('delete-files', async () => {
+          const files = await convex.query(api.system.getProjectFiles, { internalKey, projectId });
+          const filesMap = new Map(files.map((file) => [file._id, file]));
+          const selected = new Set(parsedParams.data.fileIds as Id<'files'>[]);
+          const missing = [...selected].filter((id) => !filesMap.has(id));
+          if (missing.length)
+            return `Error: Files not found: ${missing.join(', ')}. Use listFiles to get valid IDs.`;
+
+          const roots = [...selected].filter((id) => {
+            let parentId = filesMap.get(id)?.parentId;
+            const visited = new Set<Id<'files'>>();
+            while (parentId && !visited.has(parentId)) {
+              if (selected.has(parentId)) return false;
+              visited.add(parentId);
+              parentId = filesMap.get(parentId)?.parentId;
+            }
+            return true;
+          });
           const results: string[] = [];
-
-          for (const file of filesToDelete) {
-            await convex.mutation(api.system.deleteFile, {
-              internalKey,
-              projectId,
-              fileId: file.id as Id<'files'>,
-            });
-
-            results.push(`Delete ${file.type} "${file.name}" successfully`);
+          for (const fileId of roots) {
+            const file = filesMap.get(fileId)!;
+            try {
+              await convex.mutation(api.system.deleteFile, { internalKey, projectId, fileId });
+              results.push(`Deleted ${file.type} "${file.name}" successfully`);
+            } catch (error) {
+              results.push(
+                `Error deleting "${file.name}": ${error instanceof Error ? error.message : 'Unknown error'}`
+              );
+            }
           }
-
           return results.join('\n');
         });
       } catch (error) {

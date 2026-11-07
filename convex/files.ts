@@ -208,10 +208,9 @@ export const renameFile = mutation({
     const file = await db.get('files', fileId);
     if (!file) throw new Error('File not found');
 
-    if (trimmedNewName === file.name) return fileId;
-
     const project = await db.get('projects', file.projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (trimmedNewName === file.name) return fileId;
 
     // check if a file or folder with the new name already exists in the same parent folder
     const existingFilesOrFolders = await db
