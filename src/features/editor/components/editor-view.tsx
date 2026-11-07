@@ -5,7 +5,7 @@ import { AlertTriangleIcon } from 'lucide-react';
 
 import { DEBOUNCE_MS } from '@/features/editor/constants';
 import { useEditor } from '@/features/editor/hooks/use-editor';
-import { useFile, useUpdateFile } from '@/features/projects/hooks/use-files';
+import { useFile, useFiles, useUpdateFile } from '@/features/projects/hooks/use-files';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 
@@ -18,7 +18,8 @@ interface EditorViewProps {
 }
 
 export const EditorView = ({ projectId }: EditorViewProps) => {
-  const { activeTabId } = useEditor(projectId as Id<'projects'>);
+  const { activeTabId, openTabs, closeTab } = useEditor(projectId as Id<'projects'>);
+  const files = useFiles(projectId as Id<'projects'>);
   const activeFile = useFile(activeTabId);
   const updateFile = useUpdateFile();
 
@@ -26,6 +27,15 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
 
   const isActiveFileBinary = activeFile && activeFile.storageId;
   const isActiveFileText = activeFile && !activeFile.storageId;
+
+  useEffect(() => {
+    if (!files) return;
+
+    const fileIds = new Set(files.filter((file) => file.type === 'file').map((file) => file._id));
+    for (const fileId of openTabs) {
+      if (!fileIds.has(fileId)) closeTab(fileId);
+    }
+  }, [files, openTabs, closeTab]);
 
   // cleanup pending debounced updates
   useEffect(

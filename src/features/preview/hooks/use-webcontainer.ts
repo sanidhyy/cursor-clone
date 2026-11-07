@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { WebContainer } from '@webcontainer/api';
 
-import { buildFileTree, getFilePath } from '@/features/preview/lib/utils';
+import { buildFileTree, syncFileSystem } from '@/features/preview/lib/utils';
 import { useFiles } from '@/features/projects/hooks/use-files';
 
-import type { Id } from '@/../convex/_generated/dataModel';
+import type { Doc, Id } from '@/../convex/_generated/dataModel';
 
 let webcontainerInstance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
@@ -52,6 +52,8 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
 
   const containerRef = useRef<WebContainer | null>(null);
   const hasStartedRef = useRef(false);
+  const mountedFilesRef = useRef<Doc<'files'>[] | null>(null);
+  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const files = useFiles(projectId);
 
@@ -74,6 +76,7 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
 
         const fileTree = buildFileTree(files);
         await container.mount(fileTree);
+        mountedFilesRef.current = files;
 
         container.on('server-ready', (_port, url) => {
           setPreviewUrl(url);
@@ -125,16 +128,20 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
     const container = containerRef.current;
     if (!container || !files || status !== 'running') return;
 
-    const filesMap = new Map(files.map((file) => [file._id, file]));
-
-    for (const file of files) {
-      {
-        if (file.type !== 'file' || !!file.storageId || !file.content) continue;
-
-        const filePath = getFilePath(file, filesMap);
-        container.fs.writeFile(filePath, file.content);
-      }
-    }
+    syncQueueRef.current = syncQueueRef.current
+      .then(async () => {
+        const previousFiles = mountedFilesRef.current;
+        if (containerRef.current !== container || !previousFiles) return;
+        await syncFileSystem(container.fs, previousFiles, files);
+        if (containerRef.current === container) mountedFilesRef.current = files;
+      })
+      .catch((error) => {
+        if (containerRef.current !== container) return;
+        mountedFilesRef.current = null;
+        setError(error instanceof Error ? error.message : 'Failed to sync preview files');
+        setPreviewUrl(null);
+        setStatus('error');
+      });
   }, [files, status]);
 
   useEffect(() => {
@@ -153,6 +160,8 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
   const restart = useCallback(() => {
     teardownWebContainer();
     containerRef.current = null;
+    mountedFilesRef.current = null;
+    syncQueueRef.current = Promise.resolve();
     hasStartedRef.current = false;
     setStatus('idle');
     setPreviewUrl(null);

@@ -34,7 +34,7 @@ export const getFile = query({
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file) return null;
 
     const project = await db.get('projects', file.projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('File not found');
@@ -80,7 +80,7 @@ export const getFilePath = query({
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file) return [];
 
     const project = await db.get('projects', file.projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('File not found');
