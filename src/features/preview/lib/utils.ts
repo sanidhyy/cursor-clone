@@ -7,6 +7,24 @@ type FileDoc = Doc<'files'>;
 
 export type PreviewFile = FileDoc & { storageUrl: string | null };
 
+export const hasRunnableManifest = (files: PreviewFile[], devCommand?: string): boolean => {
+  const manifest = files.find(
+    (file) =>
+      file.type === 'file' && !file.parentId && file.name === 'package.json' && !file.storageId
+  );
+  if (!manifest?.content) return false;
+
+  try {
+    const pkg = JSON.parse(manifest.content) as { scripts?: { dev?: unknown } } | null;
+    if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) return false;
+    return (
+      !!devCommand?.trim() || (typeof pkg.scripts?.dev === 'string' && !!pkg.scripts.dev.trim())
+    );
+  } catch {
+    return false;
+  }
+};
+
 const getFileContents = async (file: PreviewFile): Promise<string | Uint8Array> => {
   if (!file.storageId) return file.content ?? '';
   if (!file.storageUrl) throw new Error(`Unable to load binary file: ${file.name}`);

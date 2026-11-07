@@ -25,6 +25,7 @@ interface ProjectIdViewProps {
 
 export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
   const [activeView, setActiveView] = useState<View>('editor');
+  const [previewProjectId, setPreviewProjectId] = useState<string | null>(null);
 
   return (
     <div className='flex h-full flex-col'>
@@ -37,7 +38,10 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
         <Tab
           label='Preview'
           isActive={activeView === 'preview'}
-          onClick={() => setActiveView('preview')}
+          onClick={() => {
+            setPreviewProjectId(projectId);
+            setActiveView('preview');
+          }}
         />
 
         <div className='flex h-full flex-1 justify-end'>
@@ -64,7 +68,9 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
         </div>
 
         <div className={cn('invisible absolute inset-0', activeView === 'preview' && 'visible')}>
-          <PreviewView projectId={projectId} />
+          {(previewProjectId === projectId || activeView === 'preview') && (
+            <PreviewView key={projectId} projectId={projectId} />
+          )}
         </div>
       </div>
     </div>

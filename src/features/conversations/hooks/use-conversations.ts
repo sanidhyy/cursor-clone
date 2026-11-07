@@ -15,6 +15,10 @@ export const useConversations = (projectId: Id<'projects'>) => {
   return useQuery(api.conversations.getByProject, { projectId });
 };
 
+export const useIsProjectProcessing = (projectId: Id<'projects'>) => {
+  return useQuery(api.conversations.isProjectProcessing, { projectId });
+};
+
 export const useCreateConversation = () => {
   return useMutation(api.conversations.create);
 };

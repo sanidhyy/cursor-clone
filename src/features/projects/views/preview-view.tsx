@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Allotment } from 'allotment';
 import { AlertTriangleIcon, RefreshCwIcon, TerminalSquareIcon } from 'lucide-react';
 
+import { useIsProjectProcessing } from '@/features/conversations/hooks/use-conversations';
 import { PreviewSettingsPopover } from '@/features/preview/components/preview-settings-popover';
 import { PreviewTerminal } from '@/features/preview/components/preview-terminal';
 import { useWebContainer } from '@/features/preview/hooks/use-webcontainer';
@@ -25,15 +26,31 @@ interface PreviewViewProps {
 
 export const PreviewView = ({ projectId }: PreviewViewProps) => {
   const project = useProject(projectId as Id<'projects'>);
+  const isProcessing = useIsProjectProcessing(projectId as Id<'projects'>);
   const [showTerminal, setShowTerminal] = useState(false);
 
   const { status, previewUrl, error, restart, terminalOutput } = useWebContainer({
     projectId: projectId as Id<'projects'>,
     enabled: true,
+    ready:
+      !!project &&
+      isProcessing === false &&
+      project.importStatus !== 'importing' &&
+      project.importStatus !== 'failed',
     settings: project?.settings,
   });
 
   const isLoading = status === 'booting' || status === 'installing';
+  const waitingMessage =
+    !project || isProcessing === undefined
+      ? 'Loading project...'
+      : project.importStatus === 'importing'
+        ? 'Waiting for import to finish...'
+        : project.importStatus === 'failed'
+          ? 'Import failed. Complete the import before starting preview.'
+          : isProcessing
+            ? 'Waiting for AI changes to finish...'
+            : 'Waiting for a valid package.json with a dev script or a custom start command.';
 
   return (
     <div className='flex h-full flex-col bg-background'>
@@ -58,7 +75,7 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
           )}
 
           {!!previewUrl && <span className='truncate'>{previewUrl}</span>}
-          {!isLoading && !previewUrl && !error && <span>Ready to preview</span>}
+          {status === 'idle' && <span>{waitingMessage}</span>}
         </div>
 
         <Button
@@ -81,6 +98,11 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
       <div className='min-h-0 flex-1'>
         <Allotment vertical>
           <Allotment.Pane>
+            {status === 'idle' && (
+              <div className='flex size-full items-center justify-center p-6 text-center text-sm text-muted-foreground'>
+                {waitingMessage}
+              </div>
+            )}
             {error && (
               <div className='flex size-full items-center justify-center text-muted-foreground'>
                 <div className='mx-auto flex max-w-md flex-col items-center gap-2 text-center'>

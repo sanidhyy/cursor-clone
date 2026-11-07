@@ -63,6 +63,24 @@ export const getByProject = query({
   },
 });
 
+export const isProjectProcessing = query({
+  args: { projectId: v.id('projects') },
+  handler: async ({ auth, db }, { projectId }) => {
+    const user = await verifyAuth(auth);
+    const project = await db.get('projects', projectId);
+    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+
+    const message = await db
+      .query('messages')
+      .withIndex('by_project_status', (q) =>
+        q.eq('projectId', projectId).eq('status', 'processing')
+      )
+      .first();
+
+    return !!message;
+  },
+});
+
 export const getMessages = query({
   args: {
     conversationId: v.id('conversations'),

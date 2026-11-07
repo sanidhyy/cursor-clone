@@ -2,46 +2,88 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { WebContainer } from '@webcontainer/api';
+import { WebContainer, type WebContainerProcess } from '@webcontainer/api';
 
-import { buildFileTree, syncFileSystem, type PreviewFile } from '@/features/preview/lib/utils';
+import {
+  buildFileTree,
+  hasRunnableManifest,
+  syncFileSystem,
+  type PreviewFile,
+} from '@/features/preview/lib/utils';
 import { useFiles } from '@/features/projects/hooks/use-files';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 
-let webcontainerInstance: WebContainer | null = null;
-let bootPromise: Promise<WebContainer> | null = null;
+interface PreviewSession {
+  projectId: Id<'projects'>;
+  active: boolean;
+  started: boolean;
+  container: WebContainer | null;
+  processes: WebContainerProcess[];
+  unsubscribe?: () => void;
+  release?: () => void;
+  files: PreviewFile[] | null;
+  syncQueue: Promise<void>;
+}
 
-const getWebContainer = async (): Promise<WebContainer> => {
-  if (webcontainerInstance) return webcontainerInstance;
-  if (!bootPromise)
-    bootPromise = WebContainer.boot({
-      coep: 'credentialless',
-    });
+// WebContainer permits only one live instance. A new session waits for the
+// previous session to finish booting and tear down, including cancelled boots.
+let bootQueue: Promise<void> = Promise.resolve();
 
-  webcontainerInstance = await bootPromise;
-  return webcontainerInstance;
-};
+const bootWebContainer = async (session: PreviewSession): Promise<WebContainer | null> => {
+  const previous = bootQueue;
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  bootQueue = previous.then(() => released);
 
-const teardownWebContainer = () => {
-  if (webcontainerInstance) {
-    webcontainerInstance.teardown();
-    webcontainerInstance = null;
+  await previous;
+  if (!session.active) {
+    release();
+    return null;
   }
 
-  bootPromise = null;
+  try {
+    const container = await WebContainer.boot({ coep: 'credentialless' });
+    if (!session.active) {
+      container.teardown();
+      release();
+      return null;
+    }
+
+    session.container = container;
+    session.release = release;
+    return container;
+  } catch (error) {
+    release();
+    throw error;
+  }
+};
+
+const stopSession = (session: PreviewSession) => {
+  if (!session.active) return;
+  session.active = false;
+  session.unsubscribe?.();
+  for (const process of session.processes) process.kill();
+  session.container?.teardown();
+  session.release?.();
 };
 
 interface UseWebContainerProps {
   projectId: Id<'projects'>;
   enabled: boolean;
+  ready?: boolean;
   settings?: {
     installCommand?: string;
     devCommand?: string;
   };
 }
 
-export const useWebContainer = ({ projectId, enabled, settings }: UseWebContainerProps) => {
+export const useWebContainer = ({
+  projectId,
+  enabled,
+  ready = true,
+  settings,
+}: UseWebContainerProps) => {
   const [status, setStatus] = useState<'idle' | 'booting' | 'installing' | 'running' | 'error'>(
     'idle'
   );
@@ -49,131 +91,159 @@ export const useWebContainer = ({ projectId, enabled, settings }: UseWebContaine
   const [error, setError] = useState<string | null>(null);
   const [restartKey, setRestartKey] = useState(0);
   const [terminalOutput, setTerminalOutput] = useState('');
-
-  const containerRef = useRef<WebContainer | null>(null);
-  const hasStartedRef = useRef(false);
-  const mountedFilesRef = useRef<PreviewFile[] | null>(null);
-  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
-
+  const sessionRef = useRef<PreviewSession | null>(null);
   const files = useFiles(projectId);
 
   useEffect(() => {
-    if (!enabled || !files || !files.length || !!hasStartedRef.current) return;
+    if (!enabled) return;
 
-    hasStartedRef.current = true;
+    const session: PreviewSession = {
+      projectId,
+      active: true,
+      started: false,
+      container: null,
+      processes: [],
+      files: null,
+      syncQueue: Promise.resolve(),
+    };
+    sessionRef.current = session;
+
+    void Promise.resolve().then(() => {
+      if (!session.active) return;
+      setStatus('idle');
+      setPreviewUrl(null);
+      setError(null);
+      setTerminalOutput('');
+    });
+
+    return () => {
+      stopSession(session);
+      if (sessionRef.current === session) sessionRef.current = null;
+    };
+  }, [enabled, projectId, restartKey]);
+
+  useEffect(() => {
+    const session = sessionRef.current;
+    if (
+      !enabled ||
+      !ready ||
+      !session?.active ||
+      session.projectId !== projectId ||
+      session.started ||
+      !files ||
+      files.some((file) => file.projectId !== projectId) ||
+      !hasRunnableManifest(files, settings?.devCommand)
+    )
+      return;
+
+    session.started = true;
+    const isCurrent = () => session.active && sessionRef.current === session;
+    const fail = (error: unknown) => {
+      if (!isCurrent()) return;
+      stopSession(session);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      setPreviewUrl(null);
+      setStatus('error');
+    };
+    const appendOutput = (data: string) => {
+      if (isCurrent()) setTerminalOutput((output) => output + data);
+    };
+    const pipeOutput = (process: WebContainerProcess) => {
+      session.processes.push(process);
+      void process.output.pipeTo(new WritableStream({ write: appendOutput })).catch(fail);
+    };
 
     const start = async () => {
       try {
-        setError(null);
-        setTerminalOutput('');
+        await Promise.resolve();
+        if (!isCurrent()) return;
         setStatus('booting');
 
-        const appendOutput = (data: string) =>
-          setTerminalOutput((prevTerminalOutput) => prevTerminalOutput + data);
-
-        const container = await getWebContainer();
-        containerRef.current = container;
+        const container = await bootWebContainer(session);
+        if (!container || !isCurrent()) return;
 
         const fileTree = await buildFileTree(files);
+        if (!isCurrent()) return;
         await container.mount(fileTree);
-        mountedFilesRef.current = files;
+        if (!isCurrent()) return;
+        session.files = files;
 
-        container.on('server-ready', (_port, url) => {
+        session.unsubscribe = container.on('server-ready', (_port, url) => {
+          if (!isCurrent()) return;
           setPreviewUrl(url);
           setStatus('running');
         });
-
         setStatus('installing');
 
         const installCommand = settings?.installCommand || 'npm install';
         const [installBin, ...installArgs] = installCommand.split(' ');
         appendOutput(`$ ${installCommand}\n`);
-
         const installProcess = await container.spawn(installBin, installArgs);
-        installProcess.output.pipeTo(
-          new WritableStream({
-            write: (data) => appendOutput(data),
-          })
-        );
-
+        if (!isCurrent()) {
+          installProcess.kill();
+          return;
+        }
+        pipeOutput(installProcess);
         const installExitCode = await installProcess.exit;
-
+        if (!isCurrent()) return;
         if (installExitCode !== 0)
           throw new Error(`${installCommand} failed with code ${installExitCode}`);
 
         const devCommand = settings?.devCommand || 'npm run dev';
         const [devBin, ...devArgs] = devCommand.split(' ');
         appendOutput(`\n$ ${devCommand}\n`);
-
         const devProcess = await container.spawn(devBin, devArgs);
-        devProcess.output.pipeTo(
-          new WritableStream({
-            write: (data) => appendOutput(data),
-          })
-        );
-
+        if (!isCurrent()) {
+          devProcess.kill();
+          return;
+        }
+        pipeOutput(devProcess);
         const devExitCode = await devProcess.exit;
-
+        if (!isCurrent()) return;
         if (devExitCode !== 0) throw new Error(`${devCommand} failed with code ${installExitCode}`);
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Unknown error');
-        setStatus('error');
+        fail(error);
       }
     };
 
-    start();
-  }, [enabled, files, restartKey, settings?.installCommand, settings?.devCommand]);
+    void start();
+  }, [
+    enabled,
+    files,
+    projectId,
+    ready,
+    restartKey,
+    settings?.installCommand,
+    settings?.devCommand,
+  ]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !files || status !== 'running') return;
+    const session = sessionRef.current;
+    const container = session?.container;
+    if (!session?.active || !container || !files || status !== 'running') return;
 
-    syncQueueRef.current = syncQueueRef.current
+    session.syncQueue = session.syncQueue
       .then(async () => {
-        const previousFiles = mountedFilesRef.current;
-        if (containerRef.current !== container || !previousFiles) return;
-        await syncFileSystem(container.fs, previousFiles, files);
-        if (containerRef.current === container) mountedFilesRef.current = files;
+        if (!session.active || !session.files) return;
+        await syncFileSystem(container.fs, session.files, files);
+        if (session.active) session.files = files;
       })
       .catch((error) => {
-        if (containerRef.current !== container) return;
-        mountedFilesRef.current = null;
+        if (!session.active || sessionRef.current !== session) return;
+        stopSession(session);
         setError(error instanceof Error ? error.message : 'Failed to sync preview files');
         setPreviewUrl(null);
         setStatus('error');
       });
   }, [files, status]);
 
-  useEffect(() => {
-    const disableContainer = () => {
-      if (!enabled) {
-        hasStartedRef.current = false;
-        setStatus('idle');
-        setPreviewUrl(null);
-        setError(null);
-      }
-    };
-
-    disableContainer();
-  }, [enabled]);
-
-  const restart = useCallback(() => {
-    teardownWebContainer();
-    containerRef.current = null;
-    mountedFilesRef.current = null;
-    syncQueueRef.current = Promise.resolve();
-    hasStartedRef.current = false;
-    setStatus('idle');
-    setPreviewUrl(null);
-    setError(null);
-    setRestartKey((k) => k + 1);
-  }, []);
+  const restart = useCallback(() => setRestartKey((key) => key + 1), []);
 
   return {
-    status,
-    previewUrl,
-    error,
+    status: enabled ? status : 'idle',
+    previewUrl: enabled ? previewUrl : null,
+    error: enabled ? error : null,
     restart,
-    terminalOutput,
+    terminalOutput: enabled ? terminalOutput : '',
   };
 };
