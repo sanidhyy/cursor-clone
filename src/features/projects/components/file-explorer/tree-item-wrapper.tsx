@@ -10,7 +10,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-  ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Spinner } from '@/components/ui/spinner';
@@ -80,10 +79,10 @@ export const TreeItemWrapper = ({
         )}
 
         <ContextMenuItem disabled={isPending} onClick={onRename} className='text-sm'>
-          Rename... <ContextMenuShortcut>Enter</ContextMenuShortcut>
+          Rename...
         </ContextMenuItem>
         <ContextMenuItem disabled={isPending} onClick={onDelete} className='text-sm'>
-          Delete Permanently <ContextMenuShortcut>Del</ContextMenuShortcut>
+          Delete Permanently
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
