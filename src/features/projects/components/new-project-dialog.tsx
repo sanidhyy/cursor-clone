@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getErrorMessage } from '@/lib/errors';
 
 interface NewProjectDialogProps {
   open: boolean;
@@ -60,7 +61,7 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
       router.push(`/projects/${projectId}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create project');
+      toast.error(getErrorMessage(error, 'Failed to create project'));
       return false;
     } finally {
       setIsSubmitting(false);
@@ -68,7 +69,12 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!isSubmitting) onOpenChange(next);
+      }}
+    >
       <DialogContent showCloseButton={false} className='p-0 sm:max-w-lg'>
         <DialogHeader className='sr-only'>
           <DialogTitle>What do you want to build?</DialogTitle>
@@ -89,7 +95,10 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
           <PromptInputFooter>
             <PromptInputTools />
-            <PromptInputSubmit disabled={!input.trim() || isSubmitting} />
+            <PromptInputSubmit
+              disabled={!input.trim() || isSubmitting}
+              status={isSubmitting ? 'submitted' : undefined}
+            />
           </PromptInputFooter>
         </PromptInput>
       </DialogContent>

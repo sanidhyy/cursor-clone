@@ -5,6 +5,9 @@ import {
   showTooltip,
   type Tooltip,
 } from '@codemirror/view';
+import { toast } from 'sonner';
+
+import { getErrorMessage } from '@/lib/errors';
 
 import { fetcher } from './fetcher';
 
@@ -81,7 +84,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
         form.onsubmit = async (e) => {
           e.preventDefault();
 
-          if (!editorView) return;
+          if (!editorView || submitButton.disabled) return;
 
           const instruction = input.value.trim();
           if (!instruction) return;
@@ -94,33 +97,43 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
           submitButton.disabled = true;
           submitButton.textContent = 'Editing...';
 
-          currentAbortController = new AbortController();
-          const editedCode = await fetcher(
-            {
-              fileName,
-              selectedCode,
-              fullCode,
-              instruction,
-            },
-            currentAbortController.signal
-          );
-
-          if (editedCode !== null) {
-            editorView.dispatch({
-              changes: {
-                from: selection.from,
-                to: selection.to,
-                insert: editedCode,
+          const controller = new AbortController();
+          currentAbortController = controller;
+          input.disabled = true;
+          try {
+            const editedCode = await fetcher(
+              {
+                fileName,
+                selectedCode,
+                fullCode,
+                instruction,
               },
-              selection: { anchor: selection.from + editedCode.length },
-              effects: showQuickEditEffect.of(false),
-            });
-          } else {
+              controller.signal
+            );
+
+            if (controller.signal.aborted || !editorView) return;
+            if (editedCode !== null) {
+              editorView.dispatch({
+                changes: {
+                  from: selection.from,
+                  to: selection.to,
+                  insert: editedCode,
+                },
+                selection: { anchor: selection.from + editedCode.length },
+                effects: showQuickEditEffect.of(false),
+              });
+            } else {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Submit';
+            }
+          } catch (error) {
+            toast.error(getErrorMessage(error, 'Unable to apply quick edit'));
+          } finally {
+            input.disabled = false;
             submitButton.disabled = false;
             submitButton.textContent = 'Submit';
+            if (currentAbortController === controller) currentAbortController = null;
           }
-
-          currentAbortController = null;
         };
 
         buttonContainer.appendChild(cancelButton);

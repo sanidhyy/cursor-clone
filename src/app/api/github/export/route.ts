@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         { status: PAYMENT_REQUIRED }
       );
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
     const { data, error } = exportGitHubRequestSchema.safeParse(body);
     if (!data || error)
       return NextResponse.json(

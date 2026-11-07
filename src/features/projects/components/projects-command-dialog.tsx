@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 
 import { useProjects } from '@/features/projects/hooks/use-projects';
 
+import { LoadingState } from '@/components/loading-state';
 import {
   Command,
   CommandDialog,
@@ -31,8 +32,6 @@ export const ProjectsCommandDialog = ({ open, onOpenChange }: ProjectsCommandDia
     onOpenChange(false);
   };
 
-  if (projects === undefined) return null;
-
   return (
     <CommandDialog
       open={open}
@@ -44,9 +43,13 @@ export const ProjectsCommandDialog = ({ open, onOpenChange }: ProjectsCommandDia
         <CommandInput placeholder='Search projects...' />
 
         <CommandList>
-          <CommandEmpty>No projects found.</CommandEmpty>
+          {projects === undefined ? (
+            <LoadingState label='Loading projects...' />
+          ) : (
+            <CommandEmpty>No projects found.</CommandEmpty>
+          )}
           <CommandGroup heading='Projects'>
-            {projects.map((project) => (
+            {projects?.map((project) => (
               <CommandItem
                 key={project._id}
                 value={`${project.name}-${project._id}`}

@@ -17,6 +17,8 @@ import {
 } from '@/features/projects/constants';
 import type { View } from '@/features/projects/types';
 
+import { ErrorBoundary } from '@/components/error-boundary';
+
 import { PreviewView } from './preview-view';
 
 interface ProjectIdViewProps {
@@ -58,18 +60,24 @@ export const ProjectIdView = ({ projectId }: ProjectIdViewProps) => {
               maxSize={MAX_SIDEBAR_WIDTH}
               preferredSize={DEFAULT_SIDEBAR_WIDTH}
             >
-              <FileExplorer projectId={projectId} />
+              <ErrorBoundary key={projectId} label='files'>
+                <FileExplorer projectId={projectId} />
+              </ErrorBoundary>
             </Allotment.Pane>
 
             <Allotment.Pane>
-              <EditorView projectId={projectId} />
+              <ErrorBoundary key={projectId} label='the editor'>
+                <EditorView projectId={projectId} />
+              </ErrorBoundary>
             </Allotment.Pane>
           </Allotment>
         </div>
 
         <div className={cn('invisible absolute inset-0', activeView === 'preview' && 'visible')}>
           {(previewProjectId === projectId || activeView === 'preview') && (
-            <PreviewView key={projectId} projectId={projectId} />
+            <ErrorBoundary key={projectId} label='the preview'>
+              <PreviewView projectId={projectId} />
+            </ErrorBoundary>
           )}
         </div>
       </div>

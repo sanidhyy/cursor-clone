@@ -30,7 +30,11 @@ import {
   PromptInputTools,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input';
+import { LoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { useAsyncAction } from '@/hooks/use-async-action';
+import { getErrorMessage } from '@/lib/errors';
 import { promptSchema } from '@/schemas/common';
 
 import { CodeContexts } from './code-contexts';
@@ -51,6 +55,8 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   );
   const [pastConversationsOpen, setPastConversationsOpen] = useState(false);
 
+  const { isPending: isCreating, run: runCreate } = useAsyncAction('Unable to create conversation');
+  const { isPending: isCancelling, run: runCancel } = useAsyncAction('Unable to cancel request');
   const createConversation = useCreateConversation();
   const conversations = useConversations(projectId as Id<'projects'>);
 
@@ -59,6 +65,10 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   const activeConversation = useConversation(activeConversationId);
   const conversationMessages = useMessages(activeConversationId);
 
+  const isLoading =
+    conversations === undefined ||
+    (!!activeConversationId &&
+      (activeConversation === undefined || conversationMessages === undefined));
   const isProcessing = conversationMessages?.some((msg) => msg.status === 'processing');
 
   const handleCreateConversation = async () => {
@@ -71,23 +81,21 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
       setSelectedConversationId(newConversationId);
       return newConversationId;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to create new conversation');
+      toast.error(getErrorMessage(error, 'Unable to create new conversation'));
       return null;
     }
   };
 
-  const handleCancel = async () => {
-    try {
-      await ky.post('/api/messages/cancel', {
+  const handleCancel = () =>
+    runCancel(() =>
+      ky.post('/api/messages/cancel', {
         json: projectRequestSchema.parse({ projectId }),
-      });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to cancel request');
-    }
-  };
+      })
+    );
 
   const handleSubmit = async (message: PromptInputMessage) => {
-    if (submissionPending.current || isProcessing) return false;
+    if (submissionPending.current || isProcessing || isLoading || isCreating || isCancelling)
+      return false;
     const text = promptSchema.safeParse(message.text);
     if (!text.success) {
       toast.error(text.error.issues[0].message);
@@ -109,7 +117,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
       });
       useChatStore.getState().clearSubmitted(draftProjectId, message.text, submittedContext);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Message failed to send');
+      toast.error(getErrorMessage(error, 'Message failed to send'));
       return false;
     } finally {
       submissionPending.current = false;
@@ -123,7 +131,9 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
         open={pastConversationsOpen}
         onOpenChange={setPastConversationsOpen}
         projectId={projectId as Id<'projects'>}
-        onSelect={setSelectedConversationId}
+        onSelect={(id) => {
+          if (!submissionPending.current) setSelectedConversationId(id);
+        }}
       />
 
       <div className='flex h-full flex-col bg-sidebar'>
@@ -136,6 +146,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
             <Button
               size='icon-xs'
               variant='highlight'
+              disabled={isSubmitting || isCreating || isCancelling}
               title='Conversation History'
               onClick={() => setPastConversationsOpen(true)}
             >
@@ -143,18 +154,27 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
             </Button>
 
             <Button
-              onClick={handleCreateConversation}
+              disabled={isCreating || isSubmitting || isLoading || isProcessing || isCancelling}
+              onClick={() => {
+                void runCreate(handleCreateConversation);
+              }}
               size='icon-xs'
               variant='highlight'
               title='New Conversation'
             >
-              <PlusIcon className='size-3.5' />
+              {isCreating ? <Spinner className='size-3.5' /> : <PlusIcon className='size-3.5' />}
             </Button>
           </div>
         </div>
 
         <Conversation className='flex-1'>
           <ConversationContent>
+            {isLoading && <LoadingState label='Loading conversation...' />}
+            {!isLoading && !conversationMessages?.length && (
+              <p className='p-4 text-sm text-muted-foreground'>
+                Send a message to start a conversation.
+              </p>
+            )}
             {conversationMessages?.map((message) => (
               <ConversationMessage key={message._id} data={message} />
             ))}
@@ -174,7 +194,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
                 id={`chat-input-${projectId}`}
                 onChange={(e) => useChatStore.getState().setInput(draftProjectId, e.target.value)}
                 value={input}
-                disabled={isProcessing}
+                disabled={isProcessing || isLoading || isCreating || isCancelling}
                 placeholder='Ask Polaris anything...'
               />
             </PromptInputBody>
@@ -183,8 +203,20 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
               <PromptInputTools />
 
               <PromptInputSubmit
-                disabled={isSubmitting || (!isProcessing && !input.trim())}
-                status={isProcessing ? 'streaming' : isSubmitting ? 'submitted' : undefined}
+                disabled={
+                  isSubmitting ||
+                  isLoading ||
+                  isCreating ||
+                  isCancelling ||
+                  (!isProcessing && !input.trim())
+                }
+                status={
+                  isCancelling || isSubmitting
+                    ? 'submitted'
+                    : isProcessing
+                      ? 'streaming'
+                      : undefined
+                }
                 onStop={handleCancel}
               />
             </PromptInputFooter>

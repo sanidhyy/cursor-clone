@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { useAsyncAction } from '@/hooks/use-async-action';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ExportGitHubPopoverProps {
   projectId: string;
@@ -35,6 +37,7 @@ interface ExportGitHubPopoverProps {
 
 export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => {
   const [open, setOpen] = useState(false);
+  const { isPending, run } = useAsyncAction('Unable to update export. Please try again.');
   const project = useProject(projectId);
   const { openUserProfile } = useClerk();
 
@@ -55,8 +58,8 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
       onSubmit: exportGitHubFormSchema,
     },
     onSubmit: async ({ value }) => {
-      const { repoName, visibility, description } = exportGitHubFormSchema.parse(value);
       try {
+        const { repoName, visibility, description } = exportGitHubFormSchema.parse(value);
         await ky.post('/api/github/export', {
           json: exportGitHubRequestSchema.parse({
             projectId,
@@ -69,7 +72,7 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
         if (error instanceof HTTPError) {
           const body = error.data as { error?: string } | undefined;
 
-          toast.error(body?.error || 'Failed to export GitHub repository', {
+          toast.error(getErrorMessage(error, 'Failed to export GitHub repository'), {
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
@@ -86,27 +89,28 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
                 : undefined,
           });
 
-          setOpen(false);
           return;
         }
 
-        toast.error(error instanceof Error ? error.message : 'Failed to export GitHub repository');
+        toast.error(getErrorMessage(error, 'Failed to export GitHub repository'));
       }
     },
   });
 
-  const handleCancelExport = async () => {
-    await ky.post('/api/github/export/cancel', {
-      json: projectRequestSchema.parse({ projectId }),
-    });
-  };
+  const handleCancelExport = () =>
+    run(() =>
+      ky.post('/api/github/export/cancel', {
+        json: projectRequestSchema.parse({ projectId }),
+      })
+    );
 
-  const handleResetExport = async () => {
-    await ky.post('/api/github/export/reset', {
-      json: projectRequestSchema.parse({ projectId }),
+  const handleResetExport = () =>
+    run(async () => {
+      await ky.post('/api/github/export/reset', {
+        json: projectRequestSchema.parse({ projectId }),
+      });
+      setOpen(false);
     });
-    setOpen(false);
-  };
 
   const renderContent = () => {
     if (exportStatus === 'exporting') {
@@ -115,8 +119,14 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
           <Spinner className='size-6 text-muted-foreground' />
           <p className='text-sm text-muted-foreground'>Exporting to GitHub...</p>
 
-          <Button size='sm' variant='outline' className='w-full' onClick={handleCancelExport}>
-            Cancel
+          <Button
+            size='sm'
+            variant='outline'
+            className='w-full'
+            disabled={isPending}
+            onClick={handleCancelExport}
+          >
+            {isPending ? 'Cancelling...' : 'Cancel'}
           </Button>
         </div>
       );
@@ -141,8 +151,14 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
               View on GitHub
             </Button>
 
-            <Button size='sm' variant='outline' className='w-full' onClick={handleResetExport}>
-              Close
+            <Button
+              size='sm'
+              variant='outline'
+              className='w-full'
+              disabled={isPending}
+              onClick={handleResetExport}
+            >
+              {isPending ? 'Closing...' : 'Close'}
             </Button>
           </div>
         </div>
@@ -158,8 +174,14 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
             Something went wrong. Please try again.
           </p>
 
-          <Button size='sm' variant='outline' className='w-full' onClick={handleResetExport}>
-            Retry
+          <Button
+            size='sm'
+            variant='outline'
+            className='w-full'
+            disabled={isPending}
+            onClick={handleResetExport}
+          >
+            {isPending ? 'Resetting...' : 'Retry'}
           </Button>
         </div>
       );
@@ -172,100 +194,108 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
           form.handleSubmit();
         }}
       >
-        <div className='space-y-4'>
-          <div className='space-y-1'>
-            <h4 className='text-sm font-medium'>Export to GitHub</h4>
-            <p className='text-sm text-muted-foreground'>
-              Export your project to a GitHub repository.
-            </p>
-          </div>
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+          {(isSubmitting) => (
+            <fieldset disabled={isSubmitting} className='contents'>
+              <div className='space-y-4'>
+                <div className='space-y-1'>
+                  <h4 className='text-sm font-medium'>Export to GitHub</h4>
+                  <p className='text-sm text-muted-foreground'>
+                    Export your project to a GitHub repository.
+                  </p>
+                </div>
 
-          <form.Field name='repoName'>
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                <form.Field name='repoName'>
+                  {(field) => {
+                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Repository Name</FieldLabel>
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Repository Name</FieldLabel>
 
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder='my-project'
-                  />
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder='my-project'
+                        />
 
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
+                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
 
-          <form.Field name='visibility'>
-            {(field) => {
-              return (
-                <Field>
-                  <FieldLabel htmlFor={field.name}>Visibility</FieldLabel>
+                <form.Field name='visibility'>
+                  {(field) => {
+                    return (
+                      <Field>
+                        <FieldLabel htmlFor={field.name}>Visibility</FieldLabel>
 
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) => field.handleChange(value as 'public' | 'private')}
-                  >
-                    <SelectTrigger id={field.name}>
-                      <SelectValue placeholder='Select visibility' className='capitalize' />
-                    </SelectTrigger>
+                        <Select
+                          value={field.state.value}
+                          onValueChange={(value) =>
+                            field.handleChange(value as 'public' | 'private')
+                          }
+                        >
+                          <SelectTrigger id={field.name}>
+                            <SelectValue placeholder='Select visibility' className='capitalize' />
+                          </SelectTrigger>
 
-                    <SelectContent>
-                      <SelectItem value='private'>Private</SelectItem>
-                      <SelectItem value='public'>Public</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              );
-            }}
-          </form.Field>
+                          <SelectContent>
+                            <SelectItem value='private'>Private</SelectItem>
+                            <SelectItem value='public'>Public</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    );
+                  }}
+                </form.Field>
 
-          <form.Field name='description'>
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                <form.Field name='description'>
+                  {(field) => {
+                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Description</FieldLabel>
 
-                  <Textarea
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder='A short description of your project'
-                    rows={2}
-                  />
+                        <Textarea
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder='A short description of your project'
+                          rows={2}
+                        />
 
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
+                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
 
-          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-            {([canSubmit, isSubmitting]) => (
-              <Button
-                type='submit'
-                size='sm'
-                className='w-full'
-                disabled={!canSubmit || isSubmitting}
-              >
-                {isSubmitting ? 'Creating...' : 'Create Repository'}
-              </Button>
-            )}
-          </form.Subscribe>
-        </div>
+                <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                  {([canSubmit, isSubmitting]) => (
+                    <Button
+                      type='submit'
+                      size='sm'
+                      className='w-full'
+                      disabled={!canSubmit || isSubmitting}
+                    >
+                      {isSubmitting ? 'Creating...' : 'Create Repository'}
+                    </Button>
+                  )}
+                </form.Subscribe>
+              </div>
+            </fieldset>
+          )}
+        </form.Subscribe>
       </form>
     );
   };
@@ -280,7 +310,12 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!isPending && !form.state.isSubmitting) setOpen(next);
+      }}
+    >
       <PopoverTrigger>
         <div className='flex h-full cursor-pointer items-center gap-1.5 border-l px-3 text-muted-foreground hover:bg-accent/30'>
           {getStatusIcon()}

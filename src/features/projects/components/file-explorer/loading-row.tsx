@@ -13,6 +13,8 @@ interface LoadingRowProps extends React.ComponentProps<'div'> {
 export const LoadingRow = ({ className, level = 0, style, ...props }: LoadingRowProps) => {
   return (
     <div
+      role='status'
+      aria-label='Loading files'
       className={cn('flex items-center justify-center py-2 text-muted-foreground', className)}
       style={{
         paddingLeft: getItemPadding(level, true),

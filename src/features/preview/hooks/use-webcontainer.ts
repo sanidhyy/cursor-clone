@@ -84,9 +84,9 @@ export const useWebContainer = ({
   ready = true,
   settings,
 }: UseWebContainerProps) => {
-  const [status, setStatus] = useState<'idle' | 'booting' | 'installing' | 'running' | 'error'>(
-    'idle'
-  );
+  const [status, setStatus] = useState<
+    'idle' | 'booting' | 'installing' | 'starting' | 'running' | 'error'
+  >('idle');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [restartKey, setRestartKey] = useState(0);
@@ -189,6 +189,7 @@ export const useWebContainer = ({
         if (installExitCode !== 0)
           throw new Error(`${installCommand} failed with code ${installExitCode}`);
 
+        setStatus('starting');
         const devCommand = settings?.devCommand || 'npm run dev';
         const [devBin, ...devArgs] = devCommand.split(' ');
         appendOutput(`\n$ ${devCommand}\n`);
@@ -200,7 +201,8 @@ export const useWebContainer = ({
         pipeOutput(devProcess);
         const devExitCode = await devProcess.exit;
         if (!isCurrent()) return;
-        if (devExitCode !== 0) throw new Error(`${devCommand} failed with code ${installExitCode}`);
+        if (devExitCode !== 0) throw new Error(`${devCommand} failed with code ${devExitCode}`);
+        throw new Error('The development server stopped. Restart preview to try again.');
       } catch (error) {
         fail(error);
       }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { FileIcon, FolderIcon } from '@react-symbols/icons/utils';
 import { ChevronRightIcon } from 'lucide-react';
@@ -8,17 +8,23 @@ import { getItemPadding } from '@/features/projects/lib/utils';
 import { fileNameSchema } from '@/features/projects/schemas/files';
 import type { FileType } from '@/features/projects/types';
 
+import { Spinner } from '@/components/ui/spinner';
+import { useAsyncAction } from '@/hooks/use-async-action';
+
 interface CreateInputProps {
   type: FileType;
   level: number;
-  onSubmit: (name: string) => void;
+  onSubmit: (name: string) => Promise<void>;
   onCancel: VoidFunction;
 }
 
 export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProps) => {
   const [value, setValue] = useState('');
+  const cancelled = useRef(false);
+  const { isPending, run } = useAsyncAction('Unable to create file or folder');
 
   const handleSubmit = () => {
+    if (cancelled.current || isPending) return;
     const trimmedValue = value.trim();
     if (!trimmedValue) return onCancel();
     const result = fileNameSchema.safeParse(value);
@@ -26,7 +32,7 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
       toast.error(result.error.issues[0].message);
       return;
     }
-    onSubmit(result.data);
+    void run(() => onSubmit(result.data));
   };
 
   return (
@@ -45,7 +51,11 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
         {type === 'folder' && <FolderIcon folderName={value} className='size-4' />}
       </div>
 
+      {isPending && <Spinner className='size-3' />}
       <input
+        disabled={isPending}
+        aria-busy={isPending}
+        aria-label='New name'
         autoFocus
         type='text'
         value={value}
@@ -54,7 +64,11 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
         onBlur={handleSubmit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') handleSubmit();
-          if (e.key === 'Escape') onCancel();
+          if (e.key === 'Escape' && !isPending) {
+            e.preventDefault();
+            cancelled.current = true;
+            onCancel();
+          }
         }}
       />
     </div>

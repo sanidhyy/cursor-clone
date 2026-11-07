@@ -16,6 +16,7 @@ import { getItemPadding } from '@/features/projects/lib/utils';
 import type { FileType } from '@/features/projects/types';
 
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
+import { useAsyncAction } from '@/hooks/use-async-action';
 
 import { CreateInput } from './create-input';
 import { LoadingRow } from './loading-row';
@@ -33,16 +34,16 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [creating, setCreating] = useState<FileType | null>(null);
 
+  const { isPending: isDeleting, run: runDelete } = useAsyncAction(
+    'Unable to delete file or folder'
+  );
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
   const renameFile = useRenameFile({
     projectId: projectId as Id<'projects'>,
     parentId: file.parentId,
   });
-  const deleteFile = useDeleteFile({
-    projectId: projectId as Id<'projects'>,
-    parentId: file.parentId,
-  });
+  const deleteFile = useDeleteFile();
 
   const { openFile, closeTab, activeTabId } = useEditor(projectId as Id<'projects'>);
 
@@ -57,32 +58,37 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
     setCreating(type);
   };
 
-  const handleCreate = (name: string) => {
+  const handleCreate = async (name: string) => {
     const type = creating;
-    setCreating(null);
+    if (!type) return;
 
     if (type === 'file') {
-      createFile({
+      await createFile({
         projectId: projectId as Id<'projects'>,
         name,
         content: '',
         parentId: file._id,
       });
     } else {
-      createFolder({
+      await createFolder({
         projectId: projectId as Id<'projects'>,
         name,
         parentId: file._id,
       });
     }
+    setCreating(null);
   };
 
-  const handleRename = (newName: string) => {
+  const handleRename = async (newName: string) => {
+    if (newName !== file.name) await renameFile({ id: file._id, newName });
     setIsRenaming(false);
+  };
 
-    if (newName === file.name) return;
-
-    renameFile({ id: file._id, newName });
+  const handleDelete = () => {
+    void runDelete(async () => {
+      await deleteFile({ id: file._id });
+      closeTab(file._id);
+    });
   };
 
   if (file.type === 'file') {
@@ -109,10 +115,8 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
         onClick={() => openFile(file._id, { pinned: false })}
         onDoubleClick={() => openFile(file._id, { pinned: true })}
         onRename={() => setIsRenaming(true)}
-        onDelete={() => {
-          closeTab(file._id);
-          deleteFile({ id: file._id });
-        }}
+        isPending={isDeleting}
+        onDelete={handleDelete}
       >
         <FileIcon fileName={fileName} autoAssign className='size-4' />
         <span className='truncate text-sm'>{fileName}</span>
@@ -195,9 +199,8 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
         onClick={() => setIsOpen((prevIsOpen) => !prevIsOpen)}
         onDoubleClick={() => {}}
         onRename={() => setIsRenaming(true)}
-        onDelete={() => {
-          deleteFile({ id: file._id });
-        }}
+        isPending={isDeleting}
+        onDelete={handleDelete}
         onCreateFile={() => startCreating('file')}
         onCreateFolder={() => startCreating('folder')}
       >

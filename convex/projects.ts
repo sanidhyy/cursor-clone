@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 
 import { previewSettingsSchema, projectNameSchema } from '@/features/projects/schemas';
 
@@ -19,7 +19,7 @@ export const updateSettings = mutation({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const validatedSettings = previewSettingsSchema.parse(settings);
     await db.patch('projects', projectId, {
@@ -56,16 +56,13 @@ export const get = query({
 });
 
 export const getById = query({
-  args: {
-    id: v.id('projects'),
-  },
-  handler: async ({ auth, db }, { id: projectId }) => {
+  args: { id: v.string() },
+  handler: async ({ auth, db }, { id }) => {
     const user = await verifyAuth(auth);
-
+    const projectId = db.normalizeId('projects', id);
+    if (!projectId) return null;
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
-
-    return project;
+    return project?.ownerId === user.subject ? project : null;
   },
 });
 
@@ -78,7 +75,7 @@ export const rename = mutation({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     await db.patch('projects', projectId, {
       name: projectNameSchema.parse(projectName),

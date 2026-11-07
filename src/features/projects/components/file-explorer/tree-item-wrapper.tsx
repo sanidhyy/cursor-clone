@@ -13,11 +13,13 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { Spinner } from '@/components/ui/spinner';
 
 interface TreeItemWrapperProps extends Readonly<React.PropsWithChildren> {
   file: Doc<'files'>;
   level: number;
   isActive?: boolean;
+  isPending?: boolean;
   onClick?: VoidFunction;
   onDoubleClick?: VoidFunction;
   onRename?: VoidFunction;
@@ -31,6 +33,7 @@ export const TreeItemWrapper = ({
   level,
   children,
   isActive,
+  isPending,
   onClick,
   onDoubleClick,
   onRename,
@@ -41,13 +44,14 @@ export const TreeItemWrapper = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
+        aria-busy={isPending}
+        onClick={isPending ? undefined : onClick}
+        onDoubleClick={isPending ? undefined : onDoubleClick}
         onAuxClick={(e) => {
-          if (e.button === 1) onDoubleClick?.();
+          if (!isPending && e.button === 1) onDoubleClick?.();
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
+          if (!isPending && e.key === 'Enter') {
             e.preventDefault();
             onRename?.();
           }
@@ -59,25 +63,26 @@ export const TreeItemWrapper = ({
         style={{ paddingLeft: getItemPadding(level, file.type === 'file') }}
       >
         {children}
+        {isPending && <Spinner className='ml-auto size-3' />}
       </ContextMenuTrigger>
 
       <ContextMenuContent finalFocus={false} className='w-64'>
         {file.type === 'folder' && (
           <>
-            <ContextMenuItem onClick={onCreateFile} className='text-sm'>
+            <ContextMenuItem disabled={isPending} onClick={onCreateFile} className='text-sm'>
               New File...
             </ContextMenuItem>
-            <ContextMenuItem onClick={onCreateFolder} className='text-sm'>
+            <ContextMenuItem disabled={isPending} onClick={onCreateFolder} className='text-sm'>
               New Folder...
             </ContextMenuItem>
             <ContextMenuSeparator />
           </>
         )}
 
-        <ContextMenuItem onClick={onRename} className='text-sm'>
+        <ContextMenuItem disabled={isPending} onClick={onRename} className='text-sm'>
           Rename... <ContextMenuShortcut>Enter</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={onDelete} className='text-sm'>
+        <ContextMenuItem disabled={isPending} onClick={onDelete} className='text-sm'>
           Delete Permanently <ContextMenuShortcut>Del</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>

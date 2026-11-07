@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 
 import { conversationTitleSchema } from '@/features/conversations/schemas';
 
@@ -15,7 +15,7 @@ export const create = mutation({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const conversationId = await db.insert('conversations', {
       projectId,
@@ -35,10 +35,11 @@ export const getById = query({
     const user = await verifyAuth(auth);
 
     const conversation = await db.get('conversations', conversationId);
-    if (!conversation) throw new Error('Conversation not found');
+    if (!conversation) throw new ConvexError('Conversation not found');
 
     const project = await db.get('projects', conversation.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Conversation not found');
+    if (!project || project.ownerId !== user.subject)
+      throw new ConvexError('Conversation not found');
 
     return conversation;
   },
@@ -52,7 +53,7 @@ export const getByProject = query({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const conversations = await db
       .query('conversations')
@@ -68,7 +69,7 @@ export const isProjectProcessing = query({
   handler: async ({ auth, db }, { projectId }) => {
     const user = await verifyAuth(auth);
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const message = await db
       .query('messages')
@@ -89,10 +90,11 @@ export const getMessages = query({
     const user = await verifyAuth(auth);
 
     const conversation = await db.get('conversations', conversationId);
-    if (!conversation) throw new Error('Conversation not found');
+    if (!conversation) throw new ConvexError('Conversation not found');
 
     const project = await db.get('projects', conversation.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Conversation not found');
+    if (!project || project.ownerId !== user.subject)
+      throw new ConvexError('Conversation not found');
 
     const messages = await db
       .query('messages')

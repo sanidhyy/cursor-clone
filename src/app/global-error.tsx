@@ -6,13 +6,7 @@ import { AlertCircleIcon, HomeIcon, RotateCcwIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-const GlobalError = ({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) => {
+const GlobalError = ({ reset }: { error: Error & { digest?: string }; reset: () => void }) => {
   return (
     <html lang='en' suppressHydrationWarning>
       <body className='min-h-screen bg-background antialiased'>
@@ -23,7 +17,7 @@ const GlobalError = ({
             <div className='flex flex-col gap-y-2 text-center'>
               <h6 className='text-lg font-medium'>Something went wrong!</h6>
               <p className='text-sm text-muted-foreground'>
-                {error?.message ?? 'An unexpected error occurred.'}
+                An unexpected error occurred. Please try again.
               </p>
             </div>
 

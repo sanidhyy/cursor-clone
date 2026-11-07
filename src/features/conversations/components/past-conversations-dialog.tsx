@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useConversations } from '@/features/conversations/hooks/use-conversations';
 
 import type { Id } from '@/../convex/_generated/dataModel';
+import { LoadingState } from '@/components/loading-state';
 import {
   Command,
   CommandDialog,
@@ -47,7 +48,11 @@ export const PastConversationsDialog = ({
         <CommandInput placeholder='Search conversations...' />
 
         <CommandList>
-          <CommandEmpty>No conversations found.</CommandEmpty>
+          {conversations === undefined ? (
+            <LoadingState label='Loading conversations...' />
+          ) : (
+            <CommandEmpty>No conversations found.</CommandEmpty>
+          )}
 
           <CommandGroup heading='Conversations'>
             {conversations?.map((conversation) => (

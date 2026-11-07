@@ -40,7 +40,13 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
     settings: project?.settings,
   });
 
-  const isLoading = status === 'booting' || status === 'installing';
+  const isLoading = status === 'booting' || status === 'installing' || status === 'starting';
+  const loadingLabel =
+    status === 'booting'
+      ? 'Starting container...'
+      : status === 'installing'
+        ? 'Installing dependencies...'
+        : 'Starting development server...';
   const waitingMessage =
     !project || isProcessing === undefined
       ? 'Loading project...'
@@ -70,7 +76,7 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
           {isLoading && (
             <div className='flex items-center gap-1.5'>
               <Spinner className='size-3' />
-              {status === 'booting' ? 'Starting...' : 'Installing...'}
+              {loadingLabel}
             </div>
           )}
 
@@ -104,7 +110,10 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
               </div>
             )}
             {error && (
-              <div className='flex size-full items-center justify-center text-muted-foreground'>
+              <div
+                role='alert'
+                className='flex size-full items-center justify-center text-muted-foreground'
+              >
                 <div className='mx-auto flex max-w-md flex-col items-center gap-2 text-center'>
                   <AlertTriangleIcon className='size-6' />
                   <p className='text-sm font-medium'>{error}</p>
@@ -118,10 +127,13 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
             )}
 
             {isLoading && !error && (
-              <div className='flex size-full items-center justify-center text-muted-foreground'>
+              <div
+                role='status'
+                className='flex size-full items-center justify-center text-muted-foreground'
+              >
                 <div className='mx-auto flex max-w-md flex-col items-center gap-2 text-center'>
                   <Spinner className='size-6' />
-                  <p className='text-sm font-medium'>Installing...</p>
+                  <p className='text-sm font-medium'>{loadingLabel}</p>
                 </div>
               </div>
             )}

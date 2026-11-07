@@ -1,4 +1,4 @@
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 
 import { fileContentSchema, fileNameSchema } from '@/features/projects/schemas/files';
 
@@ -15,7 +15,7 @@ export const getFiles = query({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const files = await db
       .query('files')
@@ -42,7 +42,7 @@ export const getFile = query({
     if (!file) return null;
 
     const project = await db.get('projects', file.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     return file;
   },
@@ -57,7 +57,7 @@ export const getFolderContents = query({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const files = await db
       .query('files')
@@ -88,7 +88,7 @@ export const getFilePath = query({
     if (!file) return [];
 
     const project = await db.get('projects', file.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     const path: { _id: Id<'files'>; name: string }[] = [];
     let currentId: Id<'files'> | undefined = fileId;
@@ -118,12 +118,12 @@ export const createFile = mutation({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
-        throw new Error('Folder not found');
+        throw new ConvexError('Folder not found');
     }
 
     // check if file or folder with same name already exists in this parent folder
@@ -134,7 +134,7 @@ export const createFile = mutation({
       )
       .collect();
 
-    if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
+    if (!!existingFilesOrFolders.length) throw new ConvexError('File or Folder already exists');
 
     await db.insert('files', {
       projectId,
@@ -163,12 +163,12 @@ export const createFolder = mutation({
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
-        throw new Error('Folder not found');
+        throw new ConvexError('Folder not found');
     }
 
     // check if file or folder with same name already exists in this parent folder
@@ -179,7 +179,7 @@ export const createFolder = mutation({
       )
       .collect();
 
-    if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
+    if (!!existingFilesOrFolders.length) throw new ConvexError('File or Folder already exists');
 
     await db.insert('files', {
       projectId,
@@ -206,10 +206,10 @@ export const renameFile = mutation({
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
     if (trimmedNewName === file.name) return fileId;
 
     // check if a file or folder with the new name already exists in the same parent folder
@@ -220,7 +220,7 @@ export const renameFile = mutation({
       )
       .collect();
 
-    if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
+    if (!!existingFilesOrFolders.length) throw new ConvexError('File or Folder already exists');
 
     // update the file's name
     await db.patch('files', fileId, {
@@ -245,15 +245,15 @@ export const deleteFile = mutation({
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     // recursively delete file/folder and all descendants
     const deleteRecursive = async (fileId: Id<'files'>) => {
       const item = await db.get('files', fileId);
-      if (!item) throw new Error('File not found');
+      if (!item) throw new ConvexError('File not found');
 
       // if its a folder, delete all children first
       if (item.type === 'folder') {
@@ -292,10 +292,10 @@ export const updateFile = mutation({
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
-    if (!file) throw new Error('File not found');
+    if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
-    if (!project || project.ownerId !== user.subject) throw new Error('File not found');
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     await db.patch('files', fileId, {
       content: fileContentSchema.parse(content),

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ImportGitHubDialogProps {
   open: boolean;
@@ -53,7 +54,7 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
         if (error instanceof HTTPError) {
           const body = error.data as { error?: string } | undefined;
 
-          toast.error(body?.error || 'Failed to import GitHub repository', {
+          toast.error(getErrorMessage(error, 'Failed to import GitHub repository'), {
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
@@ -70,17 +71,21 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
                 : undefined,
           });
 
-          onOpenChange(false);
           return;
         }
 
-        toast.error(error instanceof Error ? error.message : 'Failed to import GitHub repository');
+        toast.error(getErrorMessage(error, 'Failed to import GitHub repository'));
       }
     },
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!form.state.isSubmitting) onOpenChange(next);
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Import from GitHub</DialogTitle>
@@ -96,43 +101,49 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
             form.handleSubmit();
           }}
         >
-          <form.Field name='url'>
-            {(field) => {
-              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+          <form.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) => (
+              <fieldset disabled={isSubmitting} className='contents'>
+                <form.Field name='url'>
+                  {(field) => {
+                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-              return (
-                <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name}>Repository URL</FieldLabel>
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Repository URL</FieldLabel>
 
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={isInvalid}
-                    placeholder='https://github.com/owner/repo'
-                  />
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder='https://github.com/owner/repo'
+                        />
 
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                </Field>
-              );
-            }}
-          </form.Field>
+                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
 
-          <DialogFooter className='mt-4'>
-            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
+                <DialogFooter className='mt-4'>
+                  <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
 
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
-                <Button type='submit' disabled={!canSubmit || isSubmitting}>
-                  {isSubmitting ? 'Importing...' : 'Import'}
-                </Button>
-              )}
-            </form.Subscribe>
-          </DialogFooter>
+                  <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                    {([canSubmit, isSubmitting]) => (
+                      <Button type='submit' disabled={!canSubmit || isSubmitting}>
+                        {isSubmitting ? 'Importing...' : 'Import'}
+                      </Button>
+                    )}
+                  </form.Subscribe>
+                </DialogFooter>
+              </fieldset>
+            )}
+          </form.Subscribe>
         </form>
       </DialogContent>
     </Dialog>

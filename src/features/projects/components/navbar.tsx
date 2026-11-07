@@ -1,15 +1,16 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Poppins } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { UserButton } from '@clerk/nextjs';
 import { cn } from 'cn';
-import { CloudCheckIcon } from 'lucide-react';
+import { AlertTriangleIcon, CloudCheckIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { toast } from 'sonner';
 
+import { useFileSaveStore } from '@/features/editor/hooks/use-file-autosave';
 import { useProject, useRenameProject } from '@/features/projects/hooks/use-projects';
 import { projectNameSchema } from '@/features/projects/schemas';
 
@@ -25,6 +26,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LINKS } from '@/config';
+import { useAsyncAction } from '@/hooks/use-async-action';
 import { formatTimestamp } from '@/lib/utils';
 
 const poppins = Poppins({
@@ -40,32 +42,47 @@ export const Navbar = ({ projectId }: NavbarProps) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [name, setName] = useState('');
 
+  const cancelled = useRef(false);
+  const { isPending: isSavingName, run: runRename } = useAsyncAction('Unable to rename project');
+  const saves = useFileSaveStore((state) => state.saves);
+  const projectSaves = [...saves.values()].filter((save) => save.draft.projectId === projectId);
+  const hasSaveError = projectSaves.some((save) => save.status === 'error');
+  const isSavingFiles = projectSaves.some((save) => save.status !== 'error');
   const project = useProject(projectId);
   const renameProject = useRenameProject();
 
   const handleStartRename = () => {
     if (!project) return;
+    cancelled.current = false;
     setName(project.name);
     setIsRenaming(true);
   };
 
   const handleSubmit = () => {
-    setIsRenaming(false);
-
+    if (cancelled.current || isSavingName) return;
     const trimmedName = name.trim();
-    if (!trimmedName || !project || trimmedName === project.name) return;
+    if (!trimmedName || !project || trimmedName === project.name) {
+      setIsRenaming(false);
+      return;
+    }
 
     const result = projectNameSchema.safeParse(name);
     if (!result.success) {
       toast.error(result.error.issues[0].message);
       return;
     }
-    renameProject({ id: project._id, name: result.data });
+    void runRename(async () => {
+      await renameProject({ id: project._id, name: result.data });
+      setIsRenaming(false);
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSubmit();
-    else if (e.key === 'Escape') setIsRenaming(false);
+    else if (e.key === 'Escape' && !isSavingName) {
+      cancelled.current = true;
+      setIsRenaming(false);
+    }
   };
 
   return (
@@ -91,6 +108,9 @@ export const Navbar = ({ projectId }: NavbarProps) => {
             <BreadcrumbItem>
               {isRenaming ? (
                 <input
+                  disabled={isSavingName}
+                  aria-busy={isSavingName}
+                  aria-label='Project name'
                   autoFocus
                   type='text'
                   value={name}
@@ -112,7 +132,21 @@ export const Navbar = ({ projectId }: NavbarProps) => {
           </BreadcrumbList>
         </Breadcrumb>
 
+        {isSavingName && <Spinner className='size-4' />}
+        {projectSaves.length > 0 && (
+          <span role='status' className='flex items-center gap-1 text-xs text-muted-foreground'>
+            {hasSaveError ? (
+              <AlertTriangleIcon className='size-4 text-destructive' />
+            ) : (
+              <Spinner className='size-4' />
+            )}
+            {hasSaveError ? 'Save failed' : 'Saving...'}
+          </span>
+        )}
         {!!project &&
+          !isSavingName &&
+          !hasSaveError &&
+          !isSavingFiles &&
           (project.importStatus === 'importing' ? (
             <Tooltip>
               <TooltipTrigger>
@@ -123,6 +157,10 @@ export const Navbar = ({ projectId }: NavbarProps) => {
                 Importing...
               </TooltipContent>
             </Tooltip>
+          ) : project.importStatus === 'failed' ? (
+            <span role='alert' className='text-xs text-destructive'>
+              Import failed. Try importing the repository again.
+            </span>
           ) : (
             project.updatedAt && (
               <Tooltip>

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
 
     const { data: validatedData, error: validationError } = quickEditRequestSchema.safeParse(body);
 

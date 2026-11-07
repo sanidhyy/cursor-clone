@@ -36,24 +36,25 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
     enabled: isOpen,
   });
 
-  const handleCreate = (name: string) => {
+  const handleCreate = async (name: string) => {
     const type = creating;
-    setCreating(null);
+    if (!type) return;
 
     if (type === 'file') {
-      createFile({
+      await createFile({
         projectId: projectId as Id<'projects'>,
         name,
         content: '',
         parentId: undefined,
       });
     } else {
-      createFolder({
+      await createFolder({
         projectId: projectId as Id<'projects'>,
         name,
         parentId: undefined,
       });
     }
+    setCreating(null);
   };
 
   return (
@@ -80,6 +81,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              disabled={!!creating || rootFiles === undefined}
               title='New File...'
             >
               <FilePlusCornerIcon className='size-3.5' />
@@ -94,6 +96,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              disabled={!!creating || rootFiles === undefined}
               title='New Folder...'
             >
               <FolderPlusIcon className='size-3.5' />
@@ -107,6 +110,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
               }}
               variant='highlight'
               size='icon-xs'
+              disabled={!!creating}
               title='Collapse Folders in Explorer'
             >
               <CopyMinusIcon className='size-3.5' />
