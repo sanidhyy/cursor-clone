@@ -1,4 +1,4 @@
-import { createAgent, createNetwork, openai } from '@inngest/agent-kit';
+import { createAgent, createNetwork, createState, openai } from '@inngest/agent-kit';
 import { NonRetriableError } from 'inngest';
 
 import {
@@ -27,6 +27,7 @@ import { convex } from '@/lib/convex-client';
 interface MessageEvent {
   ownerId: string;
   messageId: Id<'messages'>;
+  userMessageId: Id<'messages'>;
   conversationId: Id<'conversations'>;
   projectId: Id<'projects'>;
   message: string;
@@ -68,6 +69,7 @@ export const processMessage = inngest.createFunction(
         await convex.mutation(api.system.updateMessageContent, {
           internalKey,
           messageId,
+          status: 'incomplete',
           content:
             'My apologies, I encountered an error while processing your request. Let me know if you need anything else!',
         });
@@ -75,7 +77,8 @@ export const processMessage = inngest.createFunction(
     },
   },
   async ({ event, step }) => {
-    const { messageId, conversationId, projectId, message, ownerId } = event.data as MessageEvent;
+    const { messageId, userMessageId, conversationId, projectId, message, ownerId } =
+      event.data as MessageEvent;
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
     await step.sleep('wait-for-db-sync', '1s');
@@ -102,28 +105,25 @@ export const processMessage = inngest.createFunction(
     if (!assistantMessage || assistantMessage.role !== 'assistant')
       throw new NonRetriableError('Message not found');
 
+    const userMessage = await step.run('get-user-message', async () => {
+      return await convex.query(api.system.getMessageById, {
+        internalKey,
+        messageId: userMessageId,
+        projectId,
+        conversationId,
+      });
+    });
+    if (!userMessage || userMessage.role !== 'user')
+      throw new NonRetriableError('Message not found');
+
     const recentMessages = await step.run('get-recent-messages', async () => {
       return await convex.query(api.system.getRecentMessages, {
         internalKey,
         conversationId,
         limit: LAST_RECENT_MESSAGES,
+        beforeMessageId: userMessageId,
       });
     });
-
-    let systemPrompt = CODING_AGENT_SYSTEM_PROMPT;
-
-    const contextMessages = recentMessages.filter(
-      (message) => message._id !== messageId && !!message.content.trim()
-    );
-
-    if (!!contextMessages.length) {
-      const historyText = contextMessages
-        .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
-        .join('\n\n');
-
-      systemPrompt += `\n\n## Previous Conversation (for context only - do NOT repeat these responses):\n${historyText}\n\n
-        ## Current Request: \nRespond ONLY to the user's new message below. Do not repeat or reference your previous responses.`;
-    }
 
     const shouldGenerateTitle = conversation.title.trim() === DEFAULT_CONVERSATION_TITLE.trim();
 
@@ -167,7 +167,7 @@ export const processMessage = inngest.createFunction(
     const codingAgent = createAgent({
       name: 'polaris',
       description: 'An expert AI coding assistant',
-      system: systemPrompt,
+      system: CODING_AGENT_SYSTEM_PROMPT,
       model: openai({
         model: 'gpt-5',
         defaultParameters: { max_completion_tokens: MAX_CODING_AGENT_COMPLETION_TOKENS },
@@ -200,14 +200,33 @@ export const processMessage = inngest.createFunction(
       },
     });
 
-    const result = await network.run(message);
+    const state = createState(
+      {},
+      {
+        messages: [
+          ...recentMessages.map((item) => ({
+            type: 'text' as const,
+            role: item.role,
+            content: item.content,
+          })),
+          {
+            type: 'text',
+            role: 'user',
+            content: userMessage.content,
+          },
+        ],
+      }
+    );
+    // Agent Kit places state messages after the system/input prompt. Keep the
+    // current user request last in state, with no duplicate input prompt.
+    const result = await network.run('', { state });
 
     const lastResult = result.state.results.at(-1);
     const textMessage = lastResult?.output.find(
       (message) => message.type === 'text' && message.role === 'assistant'
     );
 
-    let assistantResponse = 'I processed your request. Let me know if you need anything else!';
+    let assistantResponse = '';
 
     if (textMessage?.type === 'text') {
       assistantResponse =
@@ -216,11 +235,23 @@ export const processMessage = inngest.createFunction(
           : textMessage.content.map((c) => c.text).join('');
     }
 
+    const completed =
+      !!assistantResponse.trim() && !lastResult?.output.some((item) => item.type === 'tool_call');
+    if (!completed) {
+      assistantResponse = [
+        assistantResponse,
+        'I stopped before completing the request. Some changes may already be applied; review them and send a follow-up to continue.',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+    }
+
     await step.run('update-assistant-message', async () => {
       await convex.mutation(api.system.updateMessageContent, {
         internalKey,
         messageId,
         content: assistantResponse,
+        status: completed ? 'completed' : 'incomplete',
       });
     });
 

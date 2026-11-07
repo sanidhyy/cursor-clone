@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    await convex.mutation(api.system.createMessage, {
+    const userMessageId = await convex.mutation(api.system.createMessage, {
       internalKey,
       conversationId,
       projectId,
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       name: 'message/sent',
       data: {
         messageId: assistantMessageId,
+        userMessageId,
         ownerId: userId,
         conversationId,
         projectId,

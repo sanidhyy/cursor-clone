@@ -13,6 +13,8 @@ import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 import { codeSchema, promptSchema, queryLimitSchema } from '@/schemas/common';
 
+import { messageStatusValidator } from './validators';
+
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
   if (!internalKey) throw new Error('POLARIS_CONVEX_INTERNAL_KEY is not configured');
@@ -57,9 +59,7 @@ export const createMessage = mutation({
     projectId: v.id('projects'),
     role: v.union(v.literal('user'), v.literal('assistant')),
     content: v.string(),
-    status: v.optional(
-      v.union(v.literal('processing'), v.literal('completed'), v.literal('cancelled'))
-    ),
+    status: v.optional(messageStatusValidator),
   },
   handler: async ({ db }, { internalKey, conversationId, projectId, role, content, status }) => {
     validateInternalKey(internalKey);
@@ -101,13 +101,14 @@ export const updateMessageContent = mutation({
     internalKey: v.string(),
     messageId: v.id('messages'),
     content: v.string(),
+    status: v.optional(v.union(v.literal('completed'), v.literal('incomplete'))),
   },
-  handler: async ({ db }, { internalKey, messageId, content }) => {
+  handler: async ({ db }, { internalKey, messageId, content, status = 'completed' }) => {
     validateInternalKey(internalKey);
 
     await db.patch('messages', messageId, {
       content: codeSchema.parse(content),
-      status: 'completed',
+      status,
     });
   },
 });
@@ -116,7 +117,7 @@ export const updateMessageStatus = mutation({
   args: {
     internalKey: v.string(),
     messageId: v.id('messages'),
-    status: v.union(v.literal('processing'), v.literal('completed'), v.literal('cancelled')),
+    status: messageStatusValidator,
   },
   handler: async ({ db }, { internalKey, messageId, status }) => {
     validateInternalKey(internalKey);
@@ -149,8 +150,12 @@ export const getRecentMessages = query({
     internalKey: v.string(),
     conversationId: v.id('conversations'),
     limit: v.optional(v.number()),
+    beforeMessageId: v.optional(v.id('messages')),
   },
-  handler: async ({ db }, { internalKey, conversationId, limit = LAST_RECENT_MESSAGES }) => {
+  handler: async (
+    { db },
+    { internalKey, conversationId, limit = LAST_RECENT_MESSAGES, beforeMessageId }
+  ) => {
     validateInternalKey(internalKey);
 
     const messages = await db
@@ -159,7 +164,20 @@ export const getRecentMessages = query({
       .order('asc')
       .collect();
 
-    return messages.slice(-queryLimitSchema.parse(limit));
+    const end = beforeMessageId
+      ? messages.findIndex((message) => message._id === beforeMessageId)
+      : messages.length;
+    if (end === -1) throw new Error('Message not found');
+    return messages
+      .slice(0, end)
+      .filter(
+        (message) =>
+          !!message.content.trim() &&
+          message.status !== 'cancelled' &&
+          message.status !== 'processing' &&
+          (message.role === 'user' || message.status === 'completed')
+      )
+      .slice(-queryLimitSchema.parse(limit));
   },
 });
 
