@@ -60,7 +60,10 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   const createConversation = useCreateConversation();
   const conversations = useConversations(projectId as Id<'projects'>);
 
-  const activeConversationId = selectedConversationId || conversations?.[0]?._id || null;
+  const activeConversationId =
+    conversations?.find((conversation) => conversation._id === selectedConversationId)?._id ||
+    conversations?.[0]?._id ||
+    null;
 
   const activeConversation = useConversation(activeConversationId);
   const conversationMessages = useMessages(activeConversationId);

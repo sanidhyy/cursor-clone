@@ -2,10 +2,79 @@ import { ConvexError, v } from 'convex/values';
 
 import { previewSettingsSchema, projectNameSchema } from '@/features/projects/schemas';
 
-import { mutation, query } from '@/../convex/_generated/server';
+import { internal } from '@/../convex/_generated/api';
+import { internalMutation, mutation, query } from '@/../convex/_generated/server';
 import { queryLimitSchema } from '@/schemas/common';
 
 import { verifyAuth } from './auth';
+
+export const remove = mutation({
+  args: { id: v.id('projects') },
+  handler: async ({ auth, db, scheduler }, { id }) => {
+    const user = await verifyAuth(auth);
+    const project = await db.get('projects', id);
+
+    if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
+    if (project.importStatus === 'importing' || project.exportStatus === 'exporting')
+      throw new ConvexError(
+        'Wait for the GitHub import or export to finish before deleting this project'
+      );
+
+    const processing = await db
+      .query('messages')
+      .withIndex('by_project_status', (q) => q.eq('projectId', id).eq('status', 'processing'))
+      .first();
+
+    if (processing)
+      throw new ConvexError('Stop the active AI request before deleting this project');
+
+    // Removing the parent revokes access immediately. Cleanup continues in bounded batches.
+    await db.delete('projects', id);
+    await scheduler.runAfter(0, internal.projects.cleanup, { projectId: id });
+  },
+});
+
+export const cleanup = internalMutation({
+  args: { projectId: v.id('projects') },
+  handler: async ({ db, storage, scheduler }, { projectId }): Promise<void> => {
+    if (await db.get('projects', projectId)) throw new Error('Project must be deleted first');
+
+    const files = await db
+      .query('files')
+      .withIndex('by_project', (q) => q.eq('projectId', projectId))
+      .take(10);
+
+    for (const file of files) {
+      if (file.storageId) await storage.delete(file.storageId);
+      await db.delete('files', file._id);
+    }
+
+    if (files.length) {
+      await scheduler.runAfter(0, internal.projects.cleanup, { projectId });
+      return;
+    }
+
+    const messages = await db
+      .query('messages')
+      .withIndex('by_project_status', (q) => q.eq('projectId', projectId))
+      .take(10);
+
+    for (const message of messages) await db.delete('messages', message._id);
+
+    if (messages.length) {
+      await scheduler.runAfter(0, internal.projects.cleanup, { projectId });
+      return;
+    }
+
+    const conversations = await db
+      .query('conversations')
+      .withIndex('by_project', (q) => q.eq('projectId', projectId))
+      .take(10);
+    for (const conversation of conversations) await db.delete('conversations', conversation._id);
+
+    if (conversations.length) await scheduler.runAfter(0, internal.projects.cleanup, { projectId });
+  },
+});
 
 export const updateSettings = mutation({
   args: {

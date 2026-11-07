@@ -75,6 +75,14 @@ export const createMessage = mutation({
   ) => {
     validateInternalKey(internalKey);
 
+    const conversation = await db.get('conversations', conversationId);
+    if (
+      !conversation ||
+      conversation.projectId !== projectId ||
+      !(await db.get('projects', projectId))
+    )
+      throw new Error('Conversation not found');
+
     const validatedContext = codeContextsSchema.parse(context ?? []);
 
     for (const item of validatedContext) {
@@ -302,6 +310,8 @@ export const createFile = mutation({
   handler: async ({ db }, { internalKey, projectId, name, content, parentId }) => {
     validateInternalKey(internalKey);
 
+    if (!(await db.get('projects', projectId))) throw new Error('Project not found');
+
     if (!!parentId) {
       const parent = await db.get('files', parentId);
 
@@ -349,6 +359,8 @@ export const createFiles = mutation({
 
   handler: async ({ db }, { internalKey, projectId, parentId, files }) => {
     validateInternalKey(internalKey);
+
+    if (!(await db.get('projects', projectId))) throw new Error('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
@@ -403,6 +415,8 @@ export const createFolder = mutation({
 
   handler: async ({ db }, { internalKey, projectId, name, parentId }) => {
     validateInternalKey(internalKey);
+
+    if (!(await db.get('projects', projectId))) throw new Error('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
@@ -565,6 +579,8 @@ export const createBinaryFile = mutation({
 
   handler: async ({ db }, { internalKey, projectId, name, storageId, parentId }) => {
     validateInternalKey(internalKey);
+
+    if (!(await db.get('projects', projectId))) throw new Error('Project not found');
 
     const trimmedName = fileNameSchema.parse(name);
 
