@@ -13,6 +13,7 @@ export const githubRepositoryUrlSchema = httpUrlSchema.refine((value) => {
   try {
     const url = new URL(value);
     const parts = url.pathname.replace(/\/$/, '').split('/');
+
     return (
       ['github.com', 'www.github.com'].includes(url.hostname) &&
       !url.username &&

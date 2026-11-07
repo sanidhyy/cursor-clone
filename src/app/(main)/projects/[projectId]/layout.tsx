@@ -17,6 +17,7 @@ export const generateMetadata = async ({
 
   try {
     const { userId } = await auth();
+
     if (!!userId) {
       const project = await convex.query(api.system.getProjectById, {
         internalKey: env.POLARIS_CONVEX_INTERNAL_KEY,

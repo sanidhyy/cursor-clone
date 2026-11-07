@@ -16,8 +16,10 @@ export const createRenameFileTool = ({ internalKey, projectId }: RenameFileToolO
     name: 'renameFile',
     description: 'Rename a file or folder.',
     parameters: renameFileParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = renameFileParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileId, newName } = parsedParams.data;
@@ -29,6 +31,7 @@ export const createRenameFileTool = ({ internalKey, projectId }: RenameFileToolO
             projectId,
             fileId: fileId as Id<'files'>,
           });
+
           if (!file)
             return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
 

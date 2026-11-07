@@ -15,13 +15,16 @@ export const updateSettings = mutation({
       devCommand: v.optional(v.string()),
     }),
   },
+
   handler: async ({ auth, db }, { id: projectId, settings }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const validatedSettings = previewSettingsSchema.parse(settings);
+
     await db.patch('projects', projectId, {
       settings: {
         installCommand: validatedSettings.installCommand || undefined,
@@ -36,6 +39,7 @@ export const get = query({
   args: {
     limit: v.optional(v.number()),
   },
+
   handler: async ({ auth, db }, { limit }) => {
     const user = await verifyAuth(auth);
 
@@ -57,11 +61,15 @@ export const get = query({
 
 export const getById = query({
   args: { id: v.string() },
+
   handler: async ({ auth, db }, { id }) => {
     const user = await verifyAuth(auth);
     const projectId = db.normalizeId('projects', id);
+
     if (!projectId) return null;
+
     const project = await db.get('projects', projectId);
+
     return project?.ownerId === user.subject ? project : null;
   },
 });
@@ -71,10 +79,12 @@ export const rename = mutation({
     id: v.id('projects'),
     name: v.string(),
   },
+
   handler: async ({ auth, db }, { id: projectId, name: projectName }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     await db.patch('projects', projectId, {

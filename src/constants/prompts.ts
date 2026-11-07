@@ -4,6 +4,7 @@ import { quickEditRequestSchema } from '@/features/editor/schemas/quick-edit';
 import { suggestionRequestSchema } from '@/features/editor/schemas/suggestion';
 
 type SuggestionRequest = z.infer<typeof suggestionRequestSchema>;
+
 type QuickEditRequest = z.infer<typeof quickEditRequestSchema> & { documentation: string };
 
 export const SUGGESTION_PROMPT = ({

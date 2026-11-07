@@ -32,6 +32,7 @@ export const useRenameProject = () => {
       }
 
       const existingProjects = localStore.getQuery(api.projects.get, {});
+
       if (!!existingProjects && !!userId) {
         localStore.setQuery(
           api.projects.get,

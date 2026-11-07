@@ -40,10 +40,12 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
     if (!files) return;
 
     const fileIds = new Set(files.filter((file) => file.type === 'file').map((file) => file._id));
+
     for (const { draft } of useFileSaveStore.getState().saves.values()) {
       if (draft.projectId === projectId && !fileIds.has(draft.fileId))
         useFileSaveStore.getState().finish(draft);
     }
+
     for (const fileId of openTabs) {
       if (!fileIds.has(fileId)) closeTab(fileId);
     }

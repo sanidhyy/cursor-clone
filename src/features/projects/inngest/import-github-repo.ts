@@ -20,6 +20,7 @@ interface ImportGitHubRepoEvent {
 export const importGitHubRepo = inngest.createFunction(
   {
     id: 'import-github-repo',
+
     onFailure: async ({ event, step }) => {
       const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
@@ -33,6 +34,7 @@ export const importGitHubRepo = inngest.createFunction(
         });
       });
     },
+
     triggers: { event: 'github/import.repo' },
   },
   async ({ event, step }) => {
@@ -43,6 +45,7 @@ export const importGitHubRepo = inngest.createFunction(
     const tokens = await client.users.getUserOauthAccessToken(ownerId, 'github');
 
     const githubToken = tokens.data[0]?.token || null;
+
     if (!githubToken) throw new NonRetriableError('GitHub not connected');
 
     const octokit = new Octokit({ auth: githubToken });

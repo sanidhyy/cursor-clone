@@ -11,6 +11,7 @@ import {
 import { getErrorMessage } from '@/lib/errors';
 
 type QuickEditRequest = z.infer<typeof quickEditRequestSchema>;
+
 type QuickEditResponse = z.infer<typeof quickEditResponseSchema>;
 
 export const fetcher = async (
@@ -43,6 +44,7 @@ export const fetcher = async (
     if (error instanceof Error && error.name === 'AbortError') return null;
 
     toast.error(getErrorMessage(error, 'Failed to fetch AI quick edit'));
+
     return null;
   }
 };

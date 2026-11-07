@@ -17,8 +17,10 @@ export const createCreateFilesTool = ({ internalKey, projectId }: CreateFilesToo
     description:
       'Create multiple files at once in the same folder. Use this to batch create files that share the same parent folder. More efficient than creating files one by one.',
     parameters: createFilesParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = createFilesParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { parentId, files } = parsedParams.data;
@@ -57,6 +59,7 @@ export const createCreateFilesTool = ({ internalKey, projectId }: CreateFilesToo
           const failedFiles = results.filter((result) => !!result.error);
 
           let response = `Created ${createdFiles.length} file(s)`;
+
           if (!!createdFiles.length)
             response += `: ${createdFiles.map((result) => result.name).join(', ')}`;
 

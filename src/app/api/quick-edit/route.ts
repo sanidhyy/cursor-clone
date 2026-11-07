@@ -18,6 +18,7 @@ const URL_REGEX = /https?:\/\/[^\s)>\]]+/g;
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
+
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
     const body = await req.json().catch(() => null);
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ editedCode: output.editedCode });
   } catch (error) {
     console.error('[QUICK_EDIT_ERROR]: ', error);
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to generate edit',

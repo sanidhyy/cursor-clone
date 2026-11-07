@@ -19,10 +19,12 @@ import { convex } from '@/lib/convex-client';
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
+
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
     const body = await req.json().catch(() => null);
     const { data, error } = sendMessageRequestSchema.safeParse(body);
+
     if (!data || error)
       return NextResponse.json(
         { error: error?.issues[0]?.message || 'Invalid Request' },
@@ -37,6 +39,7 @@ export async function POST(req: NextRequest) {
       internalKey,
       ownerId: userId,
     });
+
     if (!conversation)
       return NextResponse.json({ error: 'Conversation not found' }, { status: NOT_FOUND });
 
@@ -48,6 +51,7 @@ export async function POST(req: NextRequest) {
         projectId,
         fileId: item.fileId as Id<'files'>,
       });
+
       if (!file || file.type !== 'file' || file.storageId)
         return NextResponse.json({ error: 'Context file not found' }, { status: NOT_FOUND });
     }
@@ -109,6 +113,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ eventId: event.ids[0], messageId: assistantMessageId });
   } catch (error) {
     console.error('[MESSAGES_ERROR]: ', error);
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to generate message',

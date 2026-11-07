@@ -25,13 +25,19 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
 
   const handleSubmit = () => {
     if (cancelled.current || isPending) return;
+
     const trimmedValue = value.trim();
+
     if (!trimmedValue) return onCancel();
+
     const result = fileNameSchema.safeParse(value);
+
     if (!result.success) {
       toast.error(result.error.issues[0].message);
+
       return;
     }
+
     void run(() => onSubmit(result.data));
   };
 

@@ -16,8 +16,10 @@ export const createUpdateFileTool = ({ internalKey, projectId }: UpdateFileToolO
     name: 'updateFile',
     description: 'Update the content of an existing file.',
     parameters: updateFileParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = updateFileParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileId, content } = parsedParams.data;
@@ -29,6 +31,7 @@ export const createUpdateFileTool = ({ internalKey, projectId }: UpdateFileToolO
             projectId,
             fileId: fileId as Id<'files'>,
           });
+
           if (!file)
             return `Error: File with ID "${fileId}" not found. Use listFiles to get valid file IDs.`;
           if (file.type === 'folder')

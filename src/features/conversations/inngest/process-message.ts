@@ -44,6 +44,7 @@ export const processMessage = inngest.createFunction(
         if: 'event.data.messageId == async.data.messageId',
       },
     ],
+
     onFailure: async ({ event, step }) => {
       const { messageId, conversationId, projectId, ownerId } = event.data.event
         .data as MessageEvent;
@@ -103,6 +104,7 @@ export const processMessage = inngest.createFunction(
         conversationId,
       });
     });
+
     if (!assistantMessage || assistantMessage.role !== 'assistant')
       throw new NonRetriableError('Message not found');
 
@@ -114,6 +116,7 @@ export const processMessage = inngest.createFunction(
         conversationId,
       });
     });
+
     if (!userMessage || userMessage.role !== 'user')
       throw new NonRetriableError('Message not found');
 
@@ -189,6 +192,7 @@ export const processMessage = inngest.createFunction(
       name: 'polaris-network',
       agents: [codingAgent],
       maxIter: MAX_AGENT_NETWORK_ITERATIONS,
+
       router: ({ network }) => {
         const lastResult = network.state.results.at(-1);
         const hasTextResponse = lastResult?.output.some(
@@ -197,6 +201,7 @@ export const processMessage = inngest.createFunction(
         const hasToolCalls = lastResult?.output.some((message) => message.type === 'tool_call');
 
         if (hasTextResponse && !hasToolCalls) return undefined;
+
         return codingAgent;
       },
     });
@@ -238,6 +243,7 @@ export const processMessage = inngest.createFunction(
 
     const completed =
       !!assistantResponse.trim() && !lastResult?.output.some((item) => item.type === 'tool_call');
+
     if (!completed) {
       assistantResponse = [
         assistantResponse,

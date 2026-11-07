@@ -17,6 +17,7 @@ export const createListFilesTool = ({ internalKey, projectId }: ListFilesToolOpt
     description:
       'List all files and folders in the project. Returns names, IDs, types, and parentId for each item. Items with parentId: null are at root level. Use the parentId to understand the folder structure - items with the same parentId are in the same folder.',
     parameters: listFilesParamsSchema,
+
     handler: async (_params, { step: toolStep }) => {
       try {
         return await toolStep?.run('list-files', async () => {

@@ -10,8 +10,10 @@ export const createScrapeUrlsTool = () => {
     description:
       'Scrape content from URLs to get documentation or reference material. Use this when the user provides URLs or references external documentation. Returns markdown content from the scraped pages.',
     parameters: scrapeUrlsParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = scrapeUrlsParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { urls } = parsedParams.data;

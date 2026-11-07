@@ -11,10 +11,12 @@ export const create = mutation({
     projectId: v.id('projects'),
     title: v.string(),
   },
+
   handler: async ({ auth, db }, { projectId, title }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const conversationId = await db.insert('conversations', {
@@ -31,13 +33,16 @@ export const getById = query({
   args: {
     id: v.id('conversations'),
   },
+
   handler: async ({ auth, db }, { id: conversationId }) => {
     const user = await verifyAuth(auth);
 
     const conversation = await db.get('conversations', conversationId);
+
     if (!conversation) throw new ConvexError('Conversation not found');
 
     const project = await db.get('projects', conversation.projectId);
+
     if (!project || project.ownerId !== user.subject)
       throw new ConvexError('Conversation not found');
 
@@ -49,10 +54,12 @@ export const getByProject = query({
   args: {
     projectId: v.id('projects'),
   },
+
   handler: async ({ auth, db }, { projectId }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const conversations = await db
@@ -60,15 +67,18 @@ export const getByProject = query({
       .withIndex('by_project', (q) => q.eq('projectId', projectId))
       .order('desc')
       .collect();
+
     return conversations;
   },
 });
 
 export const isProjectProcessing = query({
   args: { projectId: v.id('projects') },
+
   handler: async ({ auth, db }, { projectId }) => {
     const user = await verifyAuth(auth);
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const message = await db
@@ -86,13 +96,16 @@ export const getMessages = query({
   args: {
     conversationId: v.id('conversations'),
   },
+
   handler: async ({ auth, db }, { conversationId }) => {
     const user = await verifyAuth(auth);
 
     const conversation = await db.get('conversations', conversationId);
+
     if (!conversation) throw new ConvexError('Conversation not found');
 
     const project = await db.get('projects', conversation.projectId);
+
     if (!project || project.ownerId !== user.subject)
       throw new ConvexError('Conversation not found');
 
@@ -101,6 +114,7 @@ export const getMessages = query({
       .withIndex('by_conversation', (q) => q.eq('conversationId', conversationId))
       .order('asc')
       .collect();
+
     return messages;
   },
 });

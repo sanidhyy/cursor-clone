@@ -39,9 +39,11 @@ export const PreviewSettingsPopover = ({
     validators: {
       onSubmit: previewSettingsFormSchema,
     },
+
     onSubmit: async ({ value }) => {
       try {
         const settings = previewSettingsFormSchema.parse(value);
+
         await updateSettings({
           id: projectId,
           settings: {

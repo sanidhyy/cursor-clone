@@ -106,6 +106,7 @@ export type ConversationDownloadProps = Omit<ComponentProps<typeof Button>, 'onC
 
 const defaultFormatMessage = (message: UIMessage): string => {
   const roleLabel = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+
   return `**${roleLabel}:** ${getMessageText(message)}`;
 };
 
@@ -127,6 +128,7 @@ export const ConversationDownload = ({
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.download = filename;
     document.body.append(link);

@@ -38,6 +38,7 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
     validators: {
       onSubmit: importGitHubRequestSchema,
     },
+
     onSubmit: async ({ value }) => {
       try {
         const { projectId } = await ky
@@ -58,11 +59,13 @@ export const ImportGitHubDialog = ({ open, onOpenChange }: ImportGitHubDialogPro
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
+
                   onClick: () => openUserProfile(),
                 }
               : body?.error?.includes('Pro plan required')
                 ? {
                     label: 'Upgrade Now',
+
                     onClick: () =>
                       openUserProfile({
                         __experimental_startPath: '/billing',

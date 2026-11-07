@@ -57,9 +57,11 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
     validators: {
       onSubmit: exportGitHubFormSchema,
     },
+
     onSubmit: async ({ value }) => {
       try {
         const { repoName, visibility, description } = exportGitHubFormSchema.parse(value);
+
         await ky.post('/api/github/export', {
           json: exportGitHubRequestSchema.parse({
             projectId,
@@ -76,11 +78,13 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
             action: body?.error?.includes('GitHub not connected')
               ? {
                   label: 'Connect',
+
                   onClick: () => openUserProfile(),
                 }
               : body?.error?.includes('Pro plan required')
                 ? {
                     label: 'Upgrade Now',
+
                     onClick: () =>
                       openUserProfile({
                         __experimental_startPath: '/billing',

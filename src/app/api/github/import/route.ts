@@ -19,9 +19,11 @@ import { parseGitHubUrl } from '@/lib/utils';
 export async function POST(req: NextRequest) {
   try {
     const { userId, has } = await auth();
+
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
     const hasPro = has({ plan: 'pro' });
+
     if (!hasPro)
       return NextResponse.json(
         { error: 'Pro plan required. Upgrade to import repositories.' },
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null);
     const { data, error } = importGitHubRequestSchema.safeParse(body);
+
     if (!data || error)
       return NextResponse.json(
         { error: error?.issues[0]?.message || 'Invalid Request' },
@@ -40,6 +43,7 @@ export async function POST(req: NextRequest) {
     const { url } = data;
 
     const parsedGitHubUrlData = parseGitHubUrl(url);
+
     if (!parsedGitHubUrlData)
       return NextResponse.json({ error: 'Invalid GitHub Url' }, { status: BAD_REQUEST });
 
@@ -49,6 +53,7 @@ export async function POST(req: NextRequest) {
     const tokens = await clerk.users.getUserOauthAccessToken(userId, 'github');
 
     const githubToken = tokens.data[0]?.token || null;
+
     if (!githubToken)
       return NextResponse.json(
         { error: 'GitHub not connected. Please reconnect your GitHub account.' },
@@ -74,6 +79,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ eventId: event.ids[0], projectId });
   } catch (error) {
     console.error('[IMPORT_GITHUB_ERROR]: ', error);
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to import GitHub repo',

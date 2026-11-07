@@ -41,8 +41,10 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
   const handleSubmit = async (message: PromptInputMessage) => {
     const request = createProjectRequestSchema.safeParse({ prompt: message.text });
+
     if (!request.success) {
       toast.error(request.error.issues[0].message);
+
       return false;
     }
 
@@ -62,6 +64,7 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
       router.push(`/projects/${projectId}`);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to create project'));
+
       return false;
     } finally {
       setIsSubmitting(false);

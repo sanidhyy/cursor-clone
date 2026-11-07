@@ -28,6 +28,7 @@ export const PreviewTerminal = ({ output }: PreviewTerminalProps) => {
     });
 
     const fitAddon = new FitAddon();
+
     terminal.loadAddon(fitAddon);
     terminal.open(containerRef.current);
 
@@ -42,6 +43,7 @@ export const PreviewTerminal = ({ output }: PreviewTerminalProps) => {
     requestAnimationFrame(() => fitAddon.fit());
 
     const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+
     resizeObserver.observe(containerRef.current);
 
     return () => {
@@ -62,6 +64,7 @@ export const PreviewTerminal = ({ output }: PreviewTerminalProps) => {
     }
 
     const newData = output.slice(lastLengthRef.current);
+
     if (!!newData) {
       terminalRef.current.write(newData);
       lastLengthRef.current = output.length;

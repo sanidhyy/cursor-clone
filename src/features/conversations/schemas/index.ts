@@ -16,6 +16,7 @@ export const codeContextSchema = z.object({
 export const codeContextsSchema = z
   .array(codeContextSchema)
   .max(5, 'Attach at most 5 code selections');
+
 export type CodeContext = z.infer<typeof codeContextSchema>;
 
 export const conversationTitleSchema = z

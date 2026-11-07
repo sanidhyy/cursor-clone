@@ -11,10 +11,12 @@ export const getFiles = query({
   args: {
     projectId: v.id('projects'),
   },
+
   handler: async ({ auth, db, storage }, { projectId }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const files = await db
@@ -35,13 +37,16 @@ export const getFile = query({
   args: {
     id: v.id('files'),
   },
+
   handler: async ({ auth, db }, { id: fileId }) => {
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
+
     if (!file) return null;
 
     const project = await db.get('projects', file.projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     return file;
@@ -53,10 +58,12 @@ export const getFolderContents = query({
     projectId: v.id('projects'),
     parentId: v.optional(v.id('files')),
   },
+
   handler: async ({ auth, db }, { projectId, parentId }) => {
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     const files = await db
@@ -81,13 +88,16 @@ export const getFilePath = query({
   args: {
     id: v.id('files'),
   },
+
   handler: async ({ auth, db }, { id: fileId }) => {
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
+
     if (!file) return [];
 
     const project = await db.get('projects', file.projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     const path: { _id: Id<'files'>; name: string }[] = [];
@@ -95,6 +105,7 @@ export const getFilePath = query({
 
     while (currentId) {
       const file = (await db.get('files', currentId)) as Doc<'files'> | undefined;
+
       if (!file) break;
 
       path.unshift({ _id: file._id, name: file.name });
@@ -112,16 +123,19 @@ export const createFile = mutation({
     name: v.string(),
     content: v.string(),
   },
+
   handler: async ({ auth, db }, { projectId, parentId, name, content }) => {
     const now = Date.now();
     const trimmedName = fileNameSchema.parse(name);
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new ConvexError('Folder not found');
     }
@@ -157,16 +171,19 @@ export const createFolder = mutation({
     parentId: v.optional(v.id('files')),
     name: v.string(),
   },
+
   handler: async ({ auth, db }, { projectId, parentId, name }) => {
     const now = Date.now();
     const trimmedName = fileNameSchema.parse(name);
     const user = await verifyAuth(auth);
 
     const project = await db.get('projects', projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('Project not found');
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new ConvexError('Folder not found');
     }
@@ -200,15 +217,18 @@ export const renameFile = mutation({
     id: v.id('files'),
     newName: v.string(),
   },
+
   handler: async ({ auth, db }, { id: fileId, newName }) => {
     const now = Date.now();
     const trimmedNewName = fileNameSchema.parse(newName);
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
+
     if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
     if (trimmedNewName === file.name) return fileId;
 
@@ -240,19 +260,23 @@ export const deleteFile = mutation({
   args: {
     id: v.id('files'),
   },
+
   handler: async ({ auth, db, storage }, { id: fileId }) => {
     const now = Date.now();
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
+
     if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     // recursively delete file/folder and all descendants
     const deleteRecursive = async (fileId: Id<'files'>) => {
       const item = await db.get('files', fileId);
+
       if (!item) throw new ConvexError('File not found');
 
       // if its a folder, delete all children first
@@ -287,14 +311,17 @@ export const updateFile = mutation({
     id: v.id('files'),
     content: v.string(),
   },
+
   handler: async ({ auth, db }, { id: fileId, content }) => {
     const now = Date.now();
     const user = await verifyAuth(auth);
 
     const file = await db.get('files', fileId);
+
     if (!file) throw new ConvexError('File not found');
 
     const project = await db.get('projects', file.projectId);
+
     if (!project || project.ownerId !== user.subject) throw new ConvexError('File not found');
 
     await db.patch('files', fileId, {

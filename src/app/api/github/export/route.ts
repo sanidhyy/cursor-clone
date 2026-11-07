@@ -20,9 +20,11 @@ import { convex } from '@/lib/convex-client';
 export async function POST(req: NextRequest) {
   try {
     const { userId, has } = await auth();
+
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
     const hasPro = has({ plan: 'pro' });
+
     if (!hasPro)
       return NextResponse.json(
         { error: 'Pro plan required. Upgrade to export repositories.' },
@@ -31,6 +33,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null);
     const { data, error } = exportGitHubRequestSchema.safeParse(body);
+
     if (!data || error)
       return NextResponse.json(
         { error: error?.issues[0]?.message || 'Invalid Request' },
@@ -45,12 +48,14 @@ export async function POST(req: NextRequest) {
       projectId: projectId as Id<'projects'>,
       ownerId: userId,
     });
+
     if (!project) return NextResponse.json({ error: 'Project not found' }, { status: NOT_FOUND });
 
     const client = await clerkClient();
     const tokens = await client.users.getUserOauthAccessToken(userId, 'github');
 
     const githubToken = tokens.data[0]?.token || null;
+
     if (!githubToken)
       return NextResponse.json(
         { error: 'GitHub not connected. Please reconnect your GitHub account.' },
@@ -71,6 +76,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ eventId: event.ids[0], projectId });
   } catch (error) {
     console.error('[EXPORT_GITHUB_ERROR]: ', error);
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to export GitHub repo',

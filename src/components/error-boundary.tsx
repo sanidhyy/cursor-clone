@@ -34,6 +34,7 @@ export class ErrorBoundary extends Component<
           </Button>
         </div>
       );
+
     return this.props.children;
   }
 }

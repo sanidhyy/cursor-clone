@@ -16,8 +16,10 @@ export const createCreateFolderTool = ({ internalKey, projectId }: CreateFolderT
     name: 'createFolder',
     description: 'Create a new folder in the project',
     parameters: createFolderParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = createFolderParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { name, parentId } = parsedParams.data;

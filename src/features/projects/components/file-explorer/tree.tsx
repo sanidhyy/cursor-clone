@@ -60,6 +60,7 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
 
   const handleCreate = async (name: string) => {
     const type = creating;
+
     if (!type) return;
 
     if (type === 'file') {
@@ -76,11 +77,13 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
         parentId: file._id,
       });
     }
+
     setCreating(null);
   };
 
   const handleRename = async (newName: string) => {
     if (newName !== file.name) await renameFile({ id: file._id, newName });
+
     setIsRenaming(false);
   };
 

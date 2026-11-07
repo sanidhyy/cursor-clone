@@ -71,10 +71,12 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   try {
     const response = await fetch(url);
     const blob = await response.blob();
+
     // FileReader uses callback-based API, wrapping in Promise is necessary
     // oxlint-disable-next-line eslint-plugin-promise(avoid-new)
     return new Promise((resolve) => {
       const reader = new FileReader();
+
       // oxlint-disable-next-line eslint-plugin-unicorn(prefer-add-event-listener)
       reader.onloadend = () => resolve(reader.result as string);
       // oxlint-disable-next-line eslint-plugin-unicorn(prefer-add-event-listener)
@@ -93,6 +95,7 @@ const captureScreenshot = async (): Promise<File | null> => {
 
   let stream: MediaStream | null = null;
   const video = document.createElement('video');
+
   video.muted = true;
   video.playsInline = true;
 
@@ -117,24 +120,30 @@ const captureScreenshot = async (): Promise<File | null> => {
 
     const width = video.videoWidth;
     const height = video.videoHeight;
+
     if (!width || !height) {
       return null;
     }
 
     const canvas = document.createElement('canvas');
+
     canvas.width = width;
     canvas.height = height;
+
     const context = canvas.getContext('2d');
+
     if (!context) {
       return null;
     }
 
     context.drawImage(video, 0, 0, width, height);
+
     // canvas.toBlob uses callback-based API, wrapping in Promise is necessary
     // oxlint-disable-next-line eslint-plugin-promise(avoid-new)
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, 'image/png');
     });
+
     if (!blob) {
       return null;
     }
@@ -155,6 +164,7 @@ const captureScreenshot = async (): Promise<File | null> => {
         track.stop();
       }
     }
+
     video.pause();
     video.srcObject = null;
   }
@@ -191,11 +201,13 @@ const ProviderAttachmentsContext = createContext<AttachmentsContext | null>(null
 
 export const usePromptInputController = () => {
   const ctx = useContext(PromptInputController);
+
   if (!ctx) {
     throw new Error(
       'Wrap your component inside <PromptInputProvider> to use usePromptInputController().'
     );
   }
+
   return ctx;
 };
 
@@ -204,11 +216,13 @@ const useOptionalPromptInputController = () => useContext(PromptInputController)
 
 export const useProviderAttachments = () => {
   const ctx = useContext(ProviderAttachmentsContext);
+
   if (!ctx) {
     throw new Error(
       'Wrap your component inside <PromptInputProvider> to use useProviderAttachments().'
     );
   }
+
   return ctx;
 };
 
@@ -238,6 +252,7 @@ export const PromptInputProvider = ({
 
   const add = useCallback((files: File[] | FileList) => {
     const incoming = [...files];
+
     if (incoming.length === 0) {
       return;
     }
@@ -257,9 +272,11 @@ export const PromptInputProvider = ({
   const remove = useCallback((id: string) => {
     setAttachmentFiles((prev) => {
       const found = prev.find((f) => f.id === id);
+
       if (found?.url) {
         URL.revokeObjectURL(found.url);
       }
+
       return prev.filter((f) => f.id !== id);
     });
   }, []);
@@ -271,6 +288,7 @@ export const PromptInputProvider = ({
           URL.revokeObjectURL(f.url);
         }
       }
+
       return [];
     });
   }, []);
@@ -351,11 +369,13 @@ export const usePromptInputAttachments = () => {
   const provider = useOptionalProviderAttachments();
   const local = useContext(LocalAttachmentsContext);
   const context = local ?? provider;
+
   if (!context) {
     throw new Error(
       'usePromptInputAttachments must be used within a PromptInput or PromptInputProvider'
     );
   }
+
   return context;
 };
 
@@ -374,11 +394,13 @@ export const LocalReferencedSourcesContext = createContext<ReferencedSourcesCont
 
 export const usePromptInputReferencedSources = () => {
   const ctx = useContext(LocalReferencedSourcesContext);
+
   if (!ctx) {
     throw new Error(
       'usePromptInputReferencedSources must be used within a LocalReferencedSourcesContext.Provider'
     );
   }
+
   return ctx;
 };
 
@@ -421,12 +443,14 @@ export const PromptInputActionAddScreenshot = ({
   const handleSelect = useCallback(
     async (event: BaseUIEvent<SyntheticEvent<HTMLDivElement, Event>>) => {
       onSelect?.(event);
+
       if (event.defaultPrevented) {
         return;
       }
 
       try {
         const screenshot = await captureScreenshot();
+
         if (screenshot) {
           attachments.add([screenshot]);
         }
@@ -437,6 +461,7 @@ export const PromptInputActionAddScreenshot = ({
         ) {
           return;
         }
+
         throw error;
       }
     },
@@ -532,8 +557,10 @@ export const PromptInput = ({
         if (pattern.endsWith('/*')) {
           // e.g: image/* -> image/
           const prefix = pattern.slice(0, -1);
+
           return f.type.startsWith(prefix);
         }
+
         return f.type === pattern;
       });
     },
@@ -544,20 +571,25 @@ export const PromptInput = ({
     (fileList: File[] | FileList) => {
       const incoming = [...fileList];
       const accepted = incoming.filter((f) => matchesAccept(f));
+
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: 'accept',
           message: 'No files match the accepted types.',
         });
+
         return;
       }
+
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
       const sized = accepted.filter(withinSize);
+
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: 'max_file_size',
           message: 'All files exceed the maximum size.',
         });
+
         return;
       }
 
@@ -565,13 +597,16 @@ export const PromptInput = ({
         const capacity =
           typeof maxFiles === 'number' ? Math.max(0, maxFiles - prev.length) : undefined;
         const capped = typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
+
         if (typeof capacity === 'number' && sized.length > capacity) {
           onError?.({
             code: 'max_files',
             message: 'Too many files. Some were not added.',
           });
         }
+
         const next: (FileUIPart & { id: string })[] = [];
+
         for (const file of capped) {
           next.push({
             filename: file.name,
@@ -581,6 +616,7 @@ export const PromptInput = ({
             url: URL.createObjectURL(file),
           });
         }
+
         return [...prev, ...next];
       });
     },
@@ -591,9 +627,11 @@ export const PromptInput = ({
     (id: string) =>
       setItems((prev) => {
         const found = prev.find((file) => file.id === id);
+
         if (found?.url) {
           URL.revokeObjectURL(found.url);
         }
+
         return prev.filter((file) => file.id !== id);
       }),
     []
@@ -604,20 +642,25 @@ export const PromptInput = ({
     (fileList: File[] | FileList) => {
       const incoming = [...fileList];
       const accepted = incoming.filter((f) => matchesAccept(f));
+
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: 'accept',
           message: 'No files match the accepted types.',
         });
+
         return;
       }
+
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
       const sized = accepted.filter(withinSize);
+
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: 'max_file_size',
           message: 'All files exceed the maximum size.',
         });
+
         return;
       }
 
@@ -625,6 +668,7 @@ export const PromptInput = ({
       const capacity =
         typeof maxFiles === 'number' ? Math.max(0, maxFiles - currentCount) : undefined;
       const capped = typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
+
       if (typeof capacity === 'number' && sized.length > capacity) {
         onError?.({
           code: 'max_files',
@@ -649,6 +693,7 @@ export const PromptInput = ({
                 URL.revokeObjectURL(file.url);
               }
             }
+
             return [];
           }),
     [usingProvider, controller]
@@ -672,6 +717,7 @@ export const PromptInput = ({
     if (!usingProvider) {
       return;
     }
+
     controller.__registerFileInput(inputRef, () => inputRef.current?.click());
   }, [usingProvider, controller]);
 
@@ -686,6 +732,7 @@ export const PromptInput = ({
   // Attach drop handlers on nearest form and document (opt-in)
   useEffect(() => {
     const form = formRef.current;
+
     if (!form) {
       return;
     }
@@ -707,8 +754,10 @@ export const PromptInput = ({
         add(e.dataTransfer.files);
       }
     };
+
     form.addEventListener('dragover', onDragOver);
     form.addEventListener('drop', onDrop);
+
     return () => {
       form.removeEventListener('dragover', onDragOver);
       form.removeEventListener('drop', onDrop);
@@ -733,8 +782,10 @@ export const PromptInput = ({
         add(e.dataTransfer.files);
       }
     };
+
     document.addEventListener('dragover', onDragOver);
     document.addEventListener('drop', onDrop);
+
     return () => {
       document.removeEventListener('dragover', onDragOver);
       document.removeEventListener('drop', onDrop);
@@ -759,6 +810,7 @@ export const PromptInput = ({
       if (event.currentTarget.files) {
         add(event.currentTarget.files);
       }
+
       // Reset input value to allow selecting files that were previously removed
       event.currentTarget.value = '';
     },
@@ -781,12 +833,16 @@ export const PromptInput = ({
     () => ({
       add: (incoming: SourceDocumentUIPart[] | SourceDocumentUIPart) => {
         const array = Array.isArray(incoming) ? incoming : [incoming];
+
         setReferencedSources((prev) => [...prev, ...array.map((s) => ({ ...s, id: nanoid() }))]);
       },
+
       clear: clearReferencedSources,
+
       remove: (id: string) => {
         setReferencedSources((prev) => prev.filter((s) => s.id !== id));
       },
+
       sources: referencedSources,
     }),
     [referencedSources, clearReferencedSources]
@@ -795,7 +851,9 @@ export const PromptInput = ({
   const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
     async (event) => {
       event.preventDefault();
+
       if (submissionPending.current) return;
+
       submissionPending.current = true;
 
       const form = event.currentTarget;
@@ -803,6 +861,7 @@ export const PromptInput = ({
         ? controller.textInput.value
         : (() => {
             const formData = new FormData(form);
+
             return (formData.get('message') as string) || '';
           })();
 
@@ -812,20 +871,26 @@ export const PromptInput = ({
           files.map(async ({ id: _id, ...item }) => {
             if (item.url?.startsWith('blob:')) {
               const dataUrl = await convertBlobUrlToDataUrl(item.url);
+
               // If conversion failed, keep the original blob URL
               return {
                 ...item,
                 url: dataUrl ?? item.url,
               };
             }
+
             return item;
           })
         );
 
         const result = await onSubmit({ files: convertedFiles, text }, event);
+
         if (result === false) return;
+
         clear();
+
         const currentText = form.querySelector<HTMLTextAreaElement>('[name="message"]')?.value;
+
         if (currentText === text) {
           if (usingProvider) controller.textInput.clear();
           else form.reset();
@@ -908,6 +973,7 @@ export const PromptInputTextarea = ({
         if (e.shiftKey) {
           return;
         }
+
         e.preventDefault();
 
         // Check if the submit button is disabled before submitting
@@ -915,6 +981,7 @@ export const PromptInputTextarea = ({
         const submitButton = form?.querySelector(
           'button[type="submit"]'
         ) as HTMLButtonElement | null;
+
         if (submitButton?.disabled) {
           return;
         }
@@ -925,7 +992,9 @@ export const PromptInputTextarea = ({
       // Remove last attachment when Backspace is pressed and textarea is empty
       if (e.key === 'Backspace' && e.currentTarget.value === '' && attachments.files.length > 0) {
         e.preventDefault();
+
         const lastAttachment = attachments.files.at(-1);
+
         if (lastAttachment) {
           attachments.remove(lastAttachment.id);
         }
@@ -947,6 +1016,7 @@ export const PromptInputTextarea = ({
       for (const item of items) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
+
           if (file) {
             files.push(file);
           }
@@ -970,6 +1040,7 @@ export const PromptInputTextarea = ({
           controller.textInput.setInput(e.currentTarget.value);
           onChange?.(e);
         },
+
         value: controller.textInput.value,
       }
     : {
@@ -1068,6 +1139,7 @@ export const PromptInputButton = ({
 };
 
 export type PromptInputActionMenuProps = ComponentProps<typeof DropdownMenu>;
+
 export const PromptInputActionMenu = (props: PromptInputActionMenuProps) => (
   <DropdownMenu {...props} />
 );
@@ -1085,6 +1157,7 @@ export const PromptInputActionMenuTrigger = ({
 );
 
 export type PromptInputActionMenuContentProps = ComponentProps<typeof DropdownMenuContent>;
+
 export const PromptInputActionMenuContent = ({
   className,
   ...props
@@ -1093,6 +1166,7 @@ export const PromptInputActionMenuContent = ({
 );
 
 export type PromptInputActionMenuItemProps = ComponentProps<typeof DropdownMenuItem>;
+
 export const PromptInputActionMenuItem = ({
   className,
   ...props
@@ -1133,8 +1207,10 @@ export const PromptInputSubmit = ({
       if (isGenerating && onStop) {
         e.preventDefault();
         onStop();
+
         return;
       }
+
       onClick?.(e);
     },
     [isGenerating, onStop, onClick]

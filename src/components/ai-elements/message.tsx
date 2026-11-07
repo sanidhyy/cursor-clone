@@ -136,11 +136,13 @@ export const MessageBranch = ({
 
   const goToPrevious = useCallback(() => {
     const newBranch = currentBranch > 0 ? currentBranch - 1 : branches.length - 1;
+
     handleBranchChange(newBranch);
   }, [currentBranch, branches.length, handleBranchChange]);
 
   const goToNext = useCallback(() => {
     const newBranch = currentBranch < branches.length - 1 ? currentBranch + 1 : 0;
+
     handleBranchChange(newBranch);
   }, [currentBranch, branches.length, handleBranchChange]);
 

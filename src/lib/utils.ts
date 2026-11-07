@@ -11,8 +11,10 @@ export const formatTimestamp = (timestamp: number) => {
 
 export const parseGitHubUrl = (url: string) => {
   const result = githubRepositoryUrlSchema.safeParse(url);
+
   if (!result.success) return null;
 
   const [, owner, repo] = new URL(result.data).pathname.replace(/\/$/, '').split('/');
+
   return { owner, repo: repo.replace(/\.git$/, '') };
 };

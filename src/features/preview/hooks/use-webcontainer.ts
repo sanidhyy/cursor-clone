@@ -34,36 +34,46 @@ const bootWebContainer = async (session: PreviewSession): Promise<WebContainer |
   const previous = bootQueue;
   let release!: () => void;
   const released = new Promise<void>((resolve) => (release = resolve));
+
   bootQueue = previous.then(() => released);
 
   await previous;
+
   if (!session.active) {
     release();
+
     return null;
   }
 
   try {
     const container = await WebContainer.boot({ coep: 'credentialless' });
+
     if (!session.active) {
       container.teardown();
       release();
+
       return null;
     }
 
     session.container = container;
     session.release = release;
+
     return container;
   } catch (error) {
     release();
+
     throw error;
   }
 };
 
 const stopSession = (session: PreviewSession) => {
   if (!session.active) return;
+
   session.active = false;
   session.unsubscribe?.();
+
   for (const process of session.processes) process.kill();
+
   session.container?.teardown();
   session.release?.();
 };
@@ -106,10 +116,12 @@ export const useWebContainer = ({
       files: null,
       syncQueue: Promise.resolve(),
     };
+
     sessionRef.current = session;
 
     void Promise.resolve().then(() => {
       if (!session.active) return;
+
       setStatus('idle');
       setPreviewUrl(null);
       setError(null);
@@ -118,12 +130,14 @@ export const useWebContainer = ({
 
     return () => {
       stopSession(session);
+
       if (sessionRef.current === session) sessionRef.current = null;
     };
   }, [enabled, projectId, restartKey]);
 
   useEffect(() => {
     const session = sessionRef.current;
+
     if (
       !enabled ||
       !ready ||
@@ -137,9 +151,11 @@ export const useWebContainer = ({
       return;
 
     session.started = true;
+
     const isCurrent = () => session.active && sessionRef.current === session;
     const fail = (error: unknown) => {
       if (!isCurrent()) return;
+
       stopSession(session);
       setError(error instanceof Error ? error.message : 'Unknown error');
       setPreviewUrl(null);
@@ -156,20 +172,28 @@ export const useWebContainer = ({
     const start = async () => {
       try {
         await Promise.resolve();
+
         if (!isCurrent()) return;
+
         setStatus('booting');
 
         const container = await bootWebContainer(session);
+
         if (!container || !isCurrent()) return;
 
         const fileTree = await buildFileTree(files);
+
         if (!isCurrent()) return;
+
         await container.mount(fileTree);
+
         if (!isCurrent()) return;
+
         session.files = files;
 
         session.unsubscribe = container.on('server-ready', (_port, url) => {
           if (!isCurrent()) return;
+
           setPreviewUrl(url);
           setStatus('running');
         });
@@ -177,31 +201,47 @@ export const useWebContainer = ({
 
         const installCommand = settings?.installCommand || 'npm install';
         const [installBin, ...installArgs] = installCommand.split(' ');
+
         appendOutput(`$ ${installCommand}\n`);
+
         const installProcess = await container.spawn(installBin, installArgs);
+
         if (!isCurrent()) {
           installProcess.kill();
+
           return;
         }
+
         pipeOutput(installProcess);
+
         const installExitCode = await installProcess.exit;
+
         if (!isCurrent()) return;
         if (installExitCode !== 0)
           throw new Error(`${installCommand} failed with code ${installExitCode}`);
 
         setStatus('starting');
+
         const devCommand = settings?.devCommand || 'npm run dev';
         const [devBin, ...devArgs] = devCommand.split(' ');
+
         appendOutput(`\n$ ${devCommand}\n`);
+
         const devProcess = await container.spawn(devBin, devArgs);
+
         if (!isCurrent()) {
           devProcess.kill();
+
           return;
         }
+
         pipeOutput(devProcess);
+
         const devExitCode = await devProcess.exit;
+
         if (!isCurrent()) return;
         if (devExitCode !== 0) throw new Error(`${devCommand} failed with code ${devExitCode}`);
+
         throw new Error('The development server stopped. Restart preview to try again.');
       } catch (error) {
         fail(error);
@@ -222,16 +262,20 @@ export const useWebContainer = ({
   useEffect(() => {
     const session = sessionRef.current;
     const container = session?.container;
+
     if (!session?.active || !container || !files || status !== 'running') return;
 
     session.syncQueue = session.syncQueue
       .then(async () => {
         if (!session.active || !session.files) return;
+
         await syncFileSystem(container.fs, session.files, files);
+
         if (session.active) session.files = files;
       })
       .catch((error) => {
         if (!session.active || sessionRef.current !== session) return;
+
         stopSession(session);
         setError(error instanceof Error ? error.message : 'Failed to sync preview files');
         setPreviewUrl(null);

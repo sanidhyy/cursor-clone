@@ -15,6 +15,7 @@ const createTooltipForSelection = (
   if (selection.empty) return [];
 
   const isQuickEditActive = state.field(quickEditState);
+
   if (isQuickEditActive) return [];
 
   return [
@@ -25,23 +26,28 @@ const createTooltipForSelection = (
 
       create: () => {
         const dom = document.createElement('div');
+
         dom.className =
           'bg-popover text-popover-foreground z-50 rounded-sm border border-input p-1 shadow-md flex items-center gap-2 text-sm';
 
         const addToChatButton = document.createElement('button');
+
         addToChatButton.textContent = 'Add to Chat';
         addToChatButton.className = 'font-sans py-1 px-2 hover:bg-foreground/10 rounded-sm';
         addToChatButton.onclick = () =>
           onAddToChat(state.doc.sliceString(selection.from, selection.to));
 
         const quickEditButton = document.createElement('button');
+
         quickEditButton.className =
           'font-sans py-1 px-2 hover:bg-foreground/10 rounded-sm flex items-center gap-1';
 
         const quickEditButtonText = document.createElement('span');
+
         quickEditButtonText.textContent = 'Quick Edit';
 
         const quickEditButtonShortcut = document.createElement('span');
+
         quickEditButtonShortcut.textContent = '⌘K';
         quickEditButtonShortcut.className = 'text-sm opacity-60';
 
@@ -64,6 +70,7 @@ const createTooltipForSelection = (
 export const selectionTooltip = (onAddToChat: (code: string) => void) => [
   StateField.define<readonly Tooltip[]>({
     create: (state) => createTooltipForSelection(state, onAddToChat),
+
     update: (tooltips, transaction) => {
       if (transaction.docChanged || transaction.selection)
         return createTooltipForSelection(transaction.state, onAddToChat);
@@ -74,6 +81,7 @@ export const selectionTooltip = (onAddToChat: (code: string) => void) => [
 
       return tooltips;
     },
+
     provide: (field) => showTooltip.computeN([field], (state) => state.field(field)),
   }),
   captureViewExtension,

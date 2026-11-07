@@ -18,12 +18,14 @@ let currentAbortController: AbortController | null = null;
 
 export const quickEditState = StateField.define<boolean>({
   create: () => false,
+
   update: (value, transaction) => {
     for (const effect of transaction.effects)
       if (effect.is(showQuickEditEffect)) return !!effect.value;
 
     if (transaction.selection) {
       const selection = transaction.state.selection.main;
+
       if (selection.empty) return false;
     }
 
@@ -33,9 +35,11 @@ export const quickEditState = StateField.define<boolean>({
 
 const createQuickEditTooltip = (state: EditorState, fileName: string): readonly Tooltip[] => {
   const selection = state.selection.main;
+
   if (selection.empty) return [];
 
   const isQuickEditActive = state.field(quickEditState);
+
   if (!isQuickEditActive) return [];
 
   return [
@@ -43,24 +47,30 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
       pos: selection.to,
       above: false,
       strictSide: false,
+
       create: () => {
         const dom = document.createElement('div');
+
         dom.className =
           'bg-popover text-popover-foreground z-50 border border-input p-2 rounded-md flex flex-col gap-2 text-sm';
 
         const form = document.createElement('form');
+
         form.className = 'flex flex-col gap-2';
 
         const input = document.createElement('input');
+
         input.type = 'text';
         input.placeholder = 'Edit selected code';
         input.className = 'bg-transparent border-none outline-none px-2 py-1 font-sans w-100';
         input.autofocus = true;
 
         const buttonContainer = document.createElement('div');
+
         buttonContainer.className = 'flex items-center justify-between gap-2';
 
         const cancelButton = document.createElement('button');
+
         cancelButton.type = 'button';
         cancelButton.textContent = 'Cancel';
         cancelButton.className =
@@ -76,6 +86,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
         };
 
         const submitButton = document.createElement('button');
+
         submitButton.type = 'submit';
         submitButton.textContent = 'Submit';
         submitButton.className =
@@ -87,6 +98,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
           if (!editorView || submitButton.disabled) return;
 
           const instruction = input.value.trim();
+
           if (!instruction) return;
 
           const selection = editorView.state.selection.main;
@@ -98,8 +110,10 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
           submitButton.textContent = 'Editing...';
 
           const controller = new AbortController();
+
           currentAbortController = controller;
           input.disabled = true;
+
           try {
             const editedCode = await fetcher(
               {
@@ -132,6 +146,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
             input.disabled = false;
             submitButton.disabled = false;
             submitButton.textContent = 'Submit';
+
             if (currentAbortController === controller) currentAbortController = null;
           }
         };
@@ -155,6 +170,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
 const quickEditTooltipField = (fileName: string) =>
   StateField.define<readonly Tooltip[]>({
     create: (state) => createQuickEditTooltip(state, fileName),
+
     update: (tooltips, transaction) => {
       if (transaction.docChanged || transaction.selection)
         return createQuickEditTooltip(transaction.state, fileName);
@@ -165,14 +181,17 @@ const quickEditTooltipField = (fileName: string) =>
 
       return tooltips;
     },
+
     provide: (field) => showTooltip.computeN([field], (state) => state.field(field)),
   });
 
 const quickEditKeymap = keymap.of([
   {
     key: 'Mod-k',
+
     run: (view) => {
       const selection = view.state.selection.main;
+
       if (selection.empty) return false;
 
       view.dispatch({

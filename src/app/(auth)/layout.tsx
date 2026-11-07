@@ -5,4 +5,5 @@ const AuthLayout = ({ children }: LayoutProps<'/'>) => {
     </div>
   );
 };
+
 export default AuthLayout;

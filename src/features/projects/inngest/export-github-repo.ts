@@ -30,6 +30,7 @@ export const exportGitHubRepo = inngest.createFunction(
         if: 'event.data.projectId == async.data.projectId',
       },
     ],
+
     onFailure: async ({ event, step }) => {
       const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
@@ -41,6 +42,7 @@ export const exportGitHubRepo = inngest.createFunction(
           projectId,
           ownerId,
         });
+
         if (!project) return;
 
         await convex.mutation(api.system.updateExportStatus, {
@@ -50,6 +52,7 @@ export const exportGitHubRepo = inngest.createFunction(
         });
       });
     },
+
     triggers: { event: 'github/export.repo' },
   },
   async ({ event, step }) => {
@@ -63,6 +66,7 @@ export const exportGitHubRepo = inngest.createFunction(
         projectId,
         ownerId,
       });
+
       if (!project) throw new NonRetriableError('Project not found');
 
       await convex.mutation(api.system.updateExportStatus, {
@@ -76,6 +80,7 @@ export const exportGitHubRepo = inngest.createFunction(
     const tokens = await client.users.getUserOauthAccessToken(ownerId, 'github');
 
     const githubToken = tokens.data[0]?.token || null;
+
     if (!githubToken) throw new NonRetriableError('GitHub not connected');
 
     const octokit = new Octokit({ auth: githubToken });
@@ -115,18 +120,21 @@ export const exportGitHubRepo = inngest.createFunction(
 
     const buildFilePaths = (files: FileWithUrl[]) => {
       const fileMap = new Map<Id<'files'>, FileWithUrl>();
+
       files.forEach((file) => fileMap.set(file._id, file));
 
       const getFullPath = (file: FileWithUrl): string => {
         if (!file.parentId) return file.name;
 
         const parent = fileMap.get(file.parentId);
+
         if (!parent) return file.name;
 
         return `${getFullPath(parent)}/${file.name}`;
       };
 
       const paths: Record<string, FileWithUrl> = {};
+
       files.forEach((file) => {
         paths[getFullPath(file)] = file;
       });
@@ -137,6 +145,7 @@ export const exportGitHubRepo = inngest.createFunction(
     const filePaths = buildFilePaths(files);
 
     const fileEntries = Object.entries(filePaths).filter(([, file]) => file.type === 'file');
+
     if (!fileEntries.length) throw new NonRetriableError('No files to export');
 
     const treeItems = await step.run('create-blobs', async () => {

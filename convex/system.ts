@@ -17,6 +17,7 @@ import { codeContextValidator, messageStatusValidator } from './validators';
 
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
+
   if (!internalKey) throw new Error('POLARIS_CONVEX_INTERNAL_KEY is not configured');
   if (key !== internalKey) throw new Error('Unauthorized');
 };
@@ -27,10 +28,12 @@ export const getProjectById = query({
     projectId: v.id('projects'),
     ownerId: v.string(),
   },
+
   handler: async ({ db }, { internalKey, projectId, ownerId }) => {
     validateInternalKey(internalKey);
 
     const project = await db.get('projects', projectId);
+
     return project?.ownerId === ownerId ? project : null;
   },
 });
@@ -41,13 +44,16 @@ export const getConversationById = query({
     internalKey: v.string(),
     ownerId: v.string(),
   },
+
   handler: async ({ db }, { conversationId, internalKey, ownerId }) => {
     validateInternalKey(internalKey);
 
     const conversation = await db.get('conversations', conversationId);
+
     if (!conversation) return null;
 
     const project = await db.get('projects', conversation.projectId);
+
     return project?.ownerId === ownerId ? conversation : null;
   },
 });
@@ -62,6 +68,7 @@ export const createMessage = mutation({
     context: v.optional(v.array(codeContextValidator)),
     status: v.optional(messageStatusValidator),
   },
+
   handler: async (
     { db },
     { internalKey, conversationId, projectId, role, content, status, context }
@@ -69,8 +76,10 @@ export const createMessage = mutation({
     validateInternalKey(internalKey);
 
     const validatedContext = codeContextsSchema.parse(context ?? []);
+
     for (const item of validatedContext) {
       const file = await db.get('files', item.fileId as Id<'files'>);
+
       if (!file || file.projectId !== projectId || file.type !== 'file' || file.storageId)
         throw new Error('Context file not found');
     }
@@ -101,9 +110,12 @@ export const getMessageById = query({
     projectId: v.id('projects'),
     conversationId: v.id('conversations'),
   },
+
   handler: async ({ db }, { internalKey, messageId, projectId, conversationId }) => {
     validateInternalKey(internalKey);
+
     const message = await db.get('messages', messageId);
+
     return message?.projectId === projectId && message.conversationId === conversationId
       ? message
       : null;
@@ -117,6 +129,7 @@ export const updateMessageContent = mutation({
     content: v.string(),
     status: v.optional(v.union(v.literal('completed'), v.literal('incomplete'))),
   },
+
   handler: async ({ db }, { internalKey, messageId, content, status = 'completed' }) => {
     validateInternalKey(internalKey);
 
@@ -133,6 +146,7 @@ export const updateMessageStatus = mutation({
     messageId: v.id('messages'),
     status: messageStatusValidator,
   },
+
   handler: async ({ db }, { internalKey, messageId, status }) => {
     validateInternalKey(internalKey);
 
@@ -145,6 +159,7 @@ export const processingMessages = query({
     internalKey: v.string(),
     projectId: v.id('projects'),
   },
+
   handler: async ({ db }, { internalKey, projectId }) => {
     validateInternalKey(internalKey);
 
@@ -166,6 +181,7 @@ export const getRecentMessages = query({
     limit: v.optional(v.number()),
     beforeMessageId: v.optional(v.id('messages')),
   },
+
   handler: async (
     { db },
     { internalKey, conversationId, limit = LAST_RECENT_MESSAGES, beforeMessageId }
@@ -181,7 +197,9 @@ export const getRecentMessages = query({
     const end = beforeMessageId
       ? messages.findIndex((message) => message._id === beforeMessageId)
       : messages.length;
+
     if (end === -1) throw new Error('Message not found');
+
     return messages
       .slice(0, end)
       .filter(
@@ -201,6 +219,7 @@ export const updateConversationTitle = mutation({
     conversationId: v.id('conversations'),
     title: v.string(),
   },
+
   handler: async ({ db }, { internalKey, conversationId, title }) => {
     validateInternalKey(internalKey);
 
@@ -218,6 +237,7 @@ export const getProjectFiles = query({
     internalKey: v.string(),
     projectId: v.id('projects'),
   },
+
   handler: async ({ db }, { internalKey, projectId }) => {
     validateInternalKey(internalKey);
 
@@ -236,10 +256,12 @@ export const getFileById = query({
     projectId: v.id('projects'),
     fileId: v.id('files'),
   },
+
   handler: async ({ db }, { internalKey, projectId, fileId }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
+
     return file?.projectId === projectId ? file : null;
   },
 });
@@ -251,10 +273,12 @@ export const updateFile = mutation({
     fileId: v.id('files'),
     content: v.string(),
   },
+
   handler: async ({ db }, { internalKey, projectId, fileId, content }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
+
     if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     await db.patch('files', fileId, {
@@ -274,11 +298,13 @@ export const createFile = mutation({
     content: v.string(),
     parentId: v.optional(v.id('files')),
   },
+
   handler: async ({ db }, { internalKey, projectId, name, content, parentId }) => {
     validateInternalKey(internalKey);
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new Error('Folder not found');
     }
@@ -292,6 +318,7 @@ export const createFile = mutation({
         q.eq('name', trimmedName).eq('projectId', projectId).eq('parentId', parentId)
       )
       .collect();
+
     if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
 
     const fileId = await db.insert('files', {
@@ -319,11 +346,13 @@ export const createFiles = mutation({
       })
     ),
   },
+
   handler: async ({ db }, { internalKey, projectId, parentId, files }) => {
     validateInternalKey(internalKey);
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new Error('Folder not found');
     }
@@ -371,11 +400,13 @@ export const createFolder = mutation({
     name: v.string(),
     parentId: v.optional(v.id('files')),
   },
+
   handler: async ({ db }, { internalKey, projectId, name, parentId }) => {
     validateInternalKey(internalKey);
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new Error('Folder not found');
     }
@@ -389,6 +420,7 @@ export const createFolder = mutation({
         q.eq('name', trimmedName).eq('projectId', projectId).eq('parentId', parentId)
       )
       .collect();
+
     if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
 
     const folderId = await db.insert('files', {
@@ -410,12 +442,14 @@ export const renameFile = mutation({
     fileId: v.id('files'),
     newName: v.string(),
   },
+
   handler: async ({ db }, { internalKey, projectId, fileId, newName }) => {
     validateInternalKey(internalKey);
 
     const trimmedNewName = fileNameSchema.parse(newName);
 
     const file = await db.get('files', fileId);
+
     if (!file || file.projectId !== projectId) throw new Error('File not found');
     if (trimmedNewName === file.name) return fileId;
 
@@ -426,6 +460,7 @@ export const renameFile = mutation({
         q.eq('name', trimmedNewName).eq('projectId', file.projectId).eq('parentId', file.parentId)
       )
       .collect();
+
     if (!!existingFilesOrFolders.length) throw new Error('File or Folder already exists');
 
     await db.patch('files', fileId, {
@@ -443,15 +478,18 @@ export const deleteFile = mutation({
     projectId: v.id('projects'),
     fileId: v.id('files'),
   },
+
   handler: async ({ db, storage }, { internalKey, projectId, fileId }) => {
     validateInternalKey(internalKey);
 
     const file = await db.get('files', fileId);
+
     if (!file || file.projectId !== projectId) throw new Error('File not found');
 
     // recursively delete file/folder and all descendants
     const deleteRecursive = async (fileId: Id<'files'>) => {
       const item = await db.get('files', fileId);
+
       if (!item) return;
       if (item.projectId !== projectId) throw new Error('File not found');
 
@@ -485,6 +523,7 @@ export const cleanup = mutation({
     internalKey: v.string(),
     projectId: v.id('projects'),
   },
+
   handler: async ({ db, storage }, { internalKey, projectId }) => {
     validateInternalKey(internalKey);
 
@@ -507,6 +546,7 @@ export const generateUploadUrl = mutation({
   args: {
     internalKey: v.string(),
   },
+
   handler: async ({ storage }, { internalKey }) => {
     validateInternalKey(internalKey);
 
@@ -522,12 +562,15 @@ export const createBinaryFile = mutation({
     storageId: v.id('_storage'),
     parentId: v.optional(v.id('files')),
   },
+
   handler: async ({ db }, { internalKey, projectId, name, storageId, parentId }) => {
     validateInternalKey(internalKey);
+
     const trimmedName = fileNameSchema.parse(name);
 
     if (!!parentId) {
       const parent = await db.get('files', parentId);
+
       if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
         throw new Error('Folder not found');
     }
@@ -562,6 +605,7 @@ export const updateImportStatus = mutation({
       v.union(v.literal('importing'), v.literal('completed'), v.literal('failed'))
     ),
   },
+
   handler: async ({ db }, { internalKey, projectId, status }) => {
     validateInternalKey(internalKey);
 
@@ -586,6 +630,7 @@ export const updateExportStatus = mutation({
     ),
     repoUrl: v.optional(v.string()),
   },
+
   handler: async ({ db }, { internalKey, projectId, status, repoUrl }) => {
     validateInternalKey(internalKey);
 
@@ -602,6 +647,7 @@ export const getProjectFilesWithUrls = query({
     internalKey: v.string(),
     projectId: v.id('projects'),
   },
+
   handler: async ({ db, storage }, { internalKey, projectId }) => {
     validateInternalKey(internalKey);
 
@@ -630,6 +676,7 @@ export const createProject = mutation({
     name: v.string(),
     ownerId: v.string(),
   },
+
   handler: async ({ db }, { internalKey, name, ownerId }) => {
     validateInternalKey(internalKey);
 
@@ -651,6 +698,7 @@ export const createProjectWithConversation = mutation({
     conversationTitle: v.string(),
     ownerId: v.string(),
   },
+
   handler: async ({ db }, { internalKey, projectName, conversationTitle, ownerId }) => {
     validateInternalKey(internalKey);
 

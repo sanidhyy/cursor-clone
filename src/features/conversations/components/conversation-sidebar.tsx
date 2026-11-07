@@ -79,9 +79,11 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
       });
 
       setSelectedConversationId(newConversationId);
+
       return newConversationId;
     } catch (error) {
       toast.error(getErrorMessage(error, 'Unable to create new conversation'));
+
       return null;
     }
   };
@@ -96,18 +98,25 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
   const handleSubmit = async (message: PromptInputMessage) => {
     if (submissionPending.current || isProcessing || isLoading || isCreating || isCancelling)
       return false;
+
     const text = promptSchema.safeParse(message.text);
+
     if (!text.success) {
       toast.error(text.error.issues[0].message);
+
       return false;
     }
 
     submissionPending.current = true;
     setIsSubmitting(true);
+
     const submittedContext = useChatStore.getState().getDraft(draftProjectId).context;
+
     try {
       const conversationId = activeConversationId || (await handleCreateConversation());
+
       if (!conversationId) return false;
+
       await ky.post('/api/messages', {
         json: sendMessageRequestSchema.parse({
           conversationId,
@@ -118,6 +127,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
       useChatStore.getState().clearSubmitted(draftProjectId, message.text, submittedContext);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Message failed to send'));
+
       return false;
     } finally {
       submissionPending.current = false;

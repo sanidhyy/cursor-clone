@@ -4,7 +4,9 @@ import { useConvexConnectionState } from 'convex/react';
 
 export const ConnectionStatus = () => {
   const { isWebSocketConnected, hasEverConnected, connectionRetries } = useConvexConnectionState();
+
   if (isWebSocketConnected || (!hasEverConnected && connectionRetries === 0)) return null;
+
   return (
     <div
       role='status'

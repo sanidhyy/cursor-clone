@@ -37,6 +37,7 @@ export const ProjectsView = () => {
       };
 
       const dialog = shortcuts[e.key.toLowerCase()];
+
       if (!dialog) return;
 
       e.preventDefault();

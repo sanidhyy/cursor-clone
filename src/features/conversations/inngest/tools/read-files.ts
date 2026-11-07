@@ -16,8 +16,10 @@ export const createReadFilesTool = ({ internalKey, projectId }: ReadFilesToolOpt
     name: 'readFiles',
     description: 'Read the content of files from the project. Returns file contents.',
     parameters: readFilesParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = readFilesParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       const { fileIds } = parsedParams.data;
@@ -38,6 +40,7 @@ export const createReadFilesTool = ({ internalKey, projectId }: ReadFilesToolOpt
                 projectId,
                 fileId: fileId as Id<'files'>,
               });
+
               if (!file) results.push({ id: fileId, error: 'File not found' });
               else if (file.type === 'folder')
                 results.push({ id: fileId, name: file.name, error: 'This is a folder' });

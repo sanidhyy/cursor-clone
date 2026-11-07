@@ -12,11 +12,14 @@ export const hasRunnableManifest = (files: PreviewFile[], devCommand?: string): 
     (file) =>
       file.type === 'file' && !file.parentId && file.name === 'package.json' && !file.storageId
   );
+
   if (!manifest?.content) return false;
 
   try {
     const pkg = JSON.parse(manifest.content) as { scripts?: { dev?: unknown } } | null;
+
     if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) return false;
+
     return (
       !!devCommand?.trim() || (typeof pkg.scripts?.dev === 'string' && !!pkg.scripts.dev.trim())
     );
@@ -45,6 +48,7 @@ export const buildFileTree = async (files: PreviewFile[]): Promise<FileSystemTre
 
     while (!!parentId) {
       const parent = filesMap.get(parentId);
+
       if (!parent) break;
 
       parts.unshift(parent.name);
@@ -69,6 +73,7 @@ export const buildFileTree = async (files: PreviewFile[]): Promise<FileSystemTre
         if (!current[part]) current[part] = { directory: Object.create(null) };
 
         const node = current[part];
+
         if ('directory' in node) current = node.directory;
       }
     }
@@ -86,6 +91,7 @@ export const getFilePath = (file: FileDoc, filesMap: Map<Id<'files'>, FileDoc>):
 
   while (!!parentId) {
     const parent = filesMap.get(parentId);
+
     if (!parent) break;
 
     parts.unshift(parent.name);
@@ -102,6 +108,7 @@ export const syncFileSystem = async (
 ) => {
   const getEntries = (items: PreviewFile[]) => {
     const filesMap = new Map(items.map((file) => [file._id, file]));
+
     return new Map(items.map((file) => [getFilePath(file, filesMap), file]));
   };
 
@@ -110,7 +117,9 @@ export const syncFileSystem = async (
 
   // Remove old paths before creating replacements; children go before parents.
   const removed = [...previous].filter(([path, file]) => current.get(path)?.type !== file.type);
+
   removed.sort(([a], [b]) => b.split('/').length - a.split('/').length);
+
   for (const [path] of removed) await fs.rm(path, { recursive: true, force: true });
 
   for (const [path, file] of current) {
@@ -120,7 +129,9 @@ export const syncFileSystem = async (
 
   for (const [path, file] of current) {
     if (file.type !== 'file') continue;
+
     const oldFile = previous.get(path);
+
     if (
       oldFile?.type === 'file' &&
       oldFile.content === file.content &&
@@ -129,7 +140,9 @@ export const syncFileSystem = async (
       continue;
 
     const parentPath = path.split('/').slice(0, -1).join('/');
+
     if (parentPath) await fs.mkdir(parentPath, { recursive: true });
+
     await fs.writeFile(path, await getFileContents(file));
   }
 };

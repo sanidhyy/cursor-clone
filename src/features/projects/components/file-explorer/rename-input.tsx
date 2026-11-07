@@ -35,12 +35,16 @@ export const RenameInput = ({
 
   const handleSubmit = () => {
     if (cancelled.current || isPending) return;
+
     const trimmedValue = value.trim() || defaultValue;
     const result = fileNameSchema.safeParse(trimmedValue);
+
     if (!result.success) {
       toast.error(result.error.issues[0].message);
+
       return;
     }
+
     void run(() => onSubmit(result.data));
   };
 

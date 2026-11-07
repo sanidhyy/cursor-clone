@@ -53,6 +53,7 @@ export const Navbar = ({ projectId }: NavbarProps) => {
 
   const handleStartRename = () => {
     if (!project) return;
+
     cancelled.current = false;
     setName(project.name);
     setIsRenaming(true);
@@ -60,17 +61,23 @@ export const Navbar = ({ projectId }: NavbarProps) => {
 
   const handleSubmit = () => {
     if (cancelled.current || isSavingName) return;
+
     const trimmedName = name.trim();
+
     if (!trimmedName || !project || trimmedName === project.name) {
       setIsRenaming(false);
+
       return;
     }
 
     const result = projectNameSchema.safeParse(name);
+
     if (!result.success) {
       toast.error(result.error.issues[0].message);
+
       return;
     }
+
     void runRename(async () => {
       await renameProject({ id: project._id, name: result.data });
       setIsRenaming(false);

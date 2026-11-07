@@ -19,11 +19,13 @@ export const env = createEnv({
   },
   emptyStringAsUndefined: true,
   isServer: typeof window === 'undefined',
+
   onValidationError: (issues) => {
     console.error('❌ Invalid environment variables:', issues);
 
     throw new Error('❌ Invalid environment variables');
   },
+
   runtimeEnv: {
     // clerk api keys
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,

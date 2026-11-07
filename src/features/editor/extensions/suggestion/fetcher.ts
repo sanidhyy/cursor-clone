@@ -8,6 +8,7 @@ import {
 } from '@/features/editor/schemas/suggestion';
 
 type SuggestionRequest = z.infer<typeof suggestionRequestSchema>;
+
 type SuggestionResponse = z.infer<typeof suggestionResponseSchema>;
 
 export const fetcher = async (

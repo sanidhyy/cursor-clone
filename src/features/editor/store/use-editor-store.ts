@@ -25,7 +25,9 @@ interface EditorStore {
 
 export const useEditorStore = create<EditorStore>()((set, get) => ({
   tabs: new Map(),
+
   getTabState: (projectId) => get().tabs.get(projectId) || defaultTabState,
+
   openFile: (projectId, fileId, { pinned }) => {
     const tabs = new Map(get().tabs);
     const state = tabs.get(projectId) || defaultTabState;
@@ -45,6 +47,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
       });
 
       set({ tabs });
+
       return;
     }
 
@@ -57,11 +60,13 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
       });
 
       set({ tabs });
+
       return;
     }
 
     // case 3: file already open - just activate (and pin if double-clicked)
     const shouldPin = pinned && previewTabId === fileId;
+
     tabs.set(projectId, {
       ...state,
       activeTabId: fileId,
@@ -77,11 +82,13 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
     const { openTabs, activeTabId, previewTabId } = state;
 
     const tabIndex = openTabs.indexOf(fileId);
+
     if (tabIndex === -1) return;
 
     const newTabs = openTabs.filter((id) => id !== fileId);
 
     let newActiveTabId = activeTabId;
+
     if (activeTabId === fileId) {
       if (newTabs.length === 0) newActiveTabId = null;
       else if (tabIndex >= newTabs.length) newActiveTabId = newTabs[newTabs.length - 1];
@@ -99,6 +106,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
 
   closeAllTabs: (projectId) => {
     const tabs = new Map(get().tabs);
+
     tabs.set(projectId, defaultTabState);
 
     set({ tabs });

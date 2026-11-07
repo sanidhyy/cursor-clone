@@ -38,6 +38,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
 
   const handleCreate = async (name: string) => {
     const type = creating;
+
     if (!type) return;
 
     if (type === 'file') {
@@ -54,6 +55,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
         parentId: undefined,
       });
     }
+
     setCreating(null);
   };
 

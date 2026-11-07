@@ -26,6 +26,7 @@ interface ProjectIdLayoutViewProps extends Readonly<React.PropsWithChildren> {
 
 export const ProjectIdLayoutView = ({ children, projectId }: ProjectIdLayoutViewProps) => {
   const project = useProject(projectId);
+
   if (project === undefined)
     return (
       <div className='h-screen'>
@@ -42,6 +43,7 @@ export const ProjectIdLayoutView = ({ children, projectId }: ProjectIdLayoutView
         <Button render={<Link href='/' />}>Back to projects</Button>
       </div>
     );
+
   return (
     <div className='flex h-screen w-full flex-col'>
       <Navbar projectId={projectId} />

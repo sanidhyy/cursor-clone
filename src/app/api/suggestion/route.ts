@@ -15,6 +15,7 @@ import { SUGGESTION_PROMPT } from '@/constants/prompts';
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
+
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: UNAUTHORIZED });
 
     const body = await req.json().catch(() => null);
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ suggestion: output.suggestion });
   } catch (error) {
     console.error('[SUGGESTION_ERROR]: ', error);
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Failed to generate suggestion',

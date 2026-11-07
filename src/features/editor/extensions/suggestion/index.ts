@@ -19,6 +19,7 @@ const setSuggestionEffect = StateEffect.define<string | null>();
 
 const suggestionState = StateField.define<string | null>({
   create: () => null,
+
   update: (value, transaction) => {
     for (const effect of transaction.effects)
       if (effect.is(setSuggestionEffect)) return effect.value;
@@ -55,6 +56,7 @@ const generatePayload = (
   fileName: string
 ): SuggestionRequest | null => {
   const code = view.state.doc.toString();
+
   if (!code || code.trim().length === 0) return null;
 
   const cursorPosition = view.state.selection.main.head;
@@ -70,6 +72,7 @@ const generatePayload = (
   const nextLines: string[] = [];
   const totalLines = view.state.doc.lines;
   const nextLinesToFetch = Math.min(5, totalLines - currentLine.number);
+
   for (let i = 1; i <= nextLinesToFetch; i++)
     nextLines.push(view.state.doc.line(currentLine.number + i).text);
 
@@ -105,13 +108,16 @@ const createDebouncePlugin = (fileName: string) => {
 
         debounceTimer = window.setTimeout(async () => {
           const payload = generatePayload(view, fileName);
+
           if (!payload) {
             isWaitingForSuggestion = false;
             view.dispatch({ effects: setSuggestionEffect.of(null) });
+
             return null;
           }
 
           currentAbortController = new AbortController();
+
           const suggestion = await fetcher(payload, currentAbortController.signal);
 
           isWaitingForSuggestion = false;
@@ -150,9 +156,11 @@ const renderPlugin = ViewPlugin.fromClass(
       if (isWaitingForSuggestion) return Decoration.none;
 
       const suggestion = view.state.field(suggestionState);
+
       if (!suggestion) return Decoration.none;
 
       const cursor = view.state.selection.main.head;
+
       return Decoration.set([
         Decoration.widget({
           widget: new SuggestionWidget(suggestion),
@@ -167,11 +175,14 @@ const renderPlugin = ViewPlugin.fromClass(
 const acceptSuggestionKeymap = keymap.of([
   {
     key: 'Tab',
+
     run: (view) => {
       const suggestion = view.state.field(suggestionState);
+
       if (!suggestion) return false;
 
       const cursor = view.state.selection.main.head;
+
       view.dispatch({
         changes: { from: cursor, insert: suggestion },
         selection: { anchor: cursor + suggestion.length },

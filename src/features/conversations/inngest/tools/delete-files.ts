@@ -17,8 +17,10 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
     description:
       'Delete files or folders from the project. If deleting a folder, all contents will be deleted recursively.',
     parameters: deleteFilesParamsSchema,
+
     handler: async (params, { step: toolStep }) => {
       const parsedParams = deleteFilesParamsSchema.safeParse(params);
+
       if (!parsedParams.success) return `Error: ${parsedParams.error.issues[0].message}`;
 
       try {
@@ -27,22 +29,28 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
           const filesMap = new Map(files.map((file) => [file._id, file]));
           const selected = new Set(parsedParams.data.fileIds as Id<'files'>[]);
           const missing = [...selected].filter((id) => !filesMap.has(id));
+
           if (missing.length)
             return `Error: Files not found: ${missing.join(', ')}. Use listFiles to get valid IDs.`;
 
           const roots = [...selected].filter((id) => {
             let parentId = filesMap.get(id)?.parentId;
             const visited = new Set<Id<'files'>>();
+
             while (parentId && !visited.has(parentId)) {
               if (selected.has(parentId)) return false;
+
               visited.add(parentId);
               parentId = filesMap.get(parentId)?.parentId;
             }
+
             return true;
           });
           const results: string[] = [];
+
           for (const fileId of roots) {
             const file = filesMap.get(fileId)!;
+
             try {
               await convex.mutation(api.system.deleteFile, { internalKey, projectId, fileId });
               results.push(`Deleted ${file.type} "${file.name}" successfully`);
@@ -52,6 +60,7 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
               );
             }
           }
+
           return results.join('\n');
         });
       } catch (error) {
