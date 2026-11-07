@@ -28,7 +28,7 @@ export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditor
   useEffect(() => {
     if (!editorRef.current) return;
 
-    new CodeMirrorEditorView({
+    const editor = new CodeMirrorEditorView({
       doc: initialValue,
       parent: editorRef.current,
       extensions: [
@@ -50,6 +50,8 @@ export const CodeEditor = ({ fileName, initialValue = '', onChange }: CodeEditor
         }),
       ],
     });
+
+    return () => editor.destroy();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initialValue is only used for initial document
   }, [languageExtension]);
