@@ -113,6 +113,12 @@ export const createFile = mutation({
     const project = await db.get('projects', projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
 
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
+
     // check if file or folder with same name already exists in this parent folder
     const existingFilesOrFolders = await db
       .query('files')
@@ -151,6 +157,12 @@ export const createFolder = mutation({
 
     const project = await db.get('projects', projectId);
     if (!project || project.ownerId !== user.subject) throw new Error('Project not found');
+
+    if (!!parentId) {
+      const parent = await db.get('files', parentId);
+      if (!parent || parent.projectId !== projectId || parent.type !== 'folder')
+        throw new Error('Folder not found');
+    }
 
     // check if file or folder with same name already exists in this parent folder
     const existingFilesOrFolders = await db
