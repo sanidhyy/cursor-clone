@@ -178,10 +178,16 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
         </div>
 
         <Conversation className='flex-1'>
-          <ConversationContent>
+          <ConversationContent
+            className={
+              isLoading || !conversationMessages?.length
+                ? 'h-full items-center justify-center'
+                : undefined
+            }
+          >
             {isLoading && <LoadingState label='Loading conversation...' />}
             {!isLoading && !conversationMessages?.length && (
-              <p className='p-4 text-sm text-muted-foreground'>
+              <p className='p-4 text-center text-sm text-muted-foreground'>
                 Send a message to start a conversation.
               </p>
             )}
