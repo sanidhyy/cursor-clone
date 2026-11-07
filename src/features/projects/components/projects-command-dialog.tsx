@@ -51,12 +51,13 @@ export const ProjectsCommandDialog = ({ open, onOpenChange }: ProjectsCommandDia
           <CommandInput placeholder='Search projects...' />
 
           <CommandList>
-            {projects === undefined ? (
-              <LoadingState label='Loading projects...' />
-            ) : (
-              <CommandEmpty>No projects found.</CommandEmpty>
-            )}
             <CommandGroup heading='Projects'>
+              {projects === undefined ? (
+                <LoadingState label='Loading projects...' />
+              ) : (
+                <CommandEmpty>No projects found.</CommandEmpty>
+              )}
+
               {projects?.map((project) => (
                 <CommandItem
                   key={project._id}

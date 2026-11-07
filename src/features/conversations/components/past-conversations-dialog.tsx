@@ -58,13 +58,13 @@ export const PastConversationsDialog = ({
           <CommandInput placeholder='Search conversations...' />
 
           <CommandList>
-            {conversations === undefined ? (
-              <LoadingState label='Loading conversations...' />
-            ) : (
-              <CommandEmpty>No conversations found.</CommandEmpty>
-            )}
-
             <CommandGroup heading='Conversations'>
+              {conversations === undefined ? (
+                <LoadingState label='Loading conversations...' />
+              ) : (
+                <CommandEmpty>No conversations found.</CommandEmpty>
+              )}
+
               {conversations?.map((conversation) => (
                 <CommandItem
                   key={conversation._id}
