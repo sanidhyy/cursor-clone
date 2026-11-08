@@ -1,6 +1,10 @@
 import { v } from 'convex/values';
 
-import { LAST_RECENT_MESSAGES } from '@/features/conversations/constants';
+import {
+  LAST_RECENT_MESSAGES,
+  MAX_AGENT_NETWORK_ITERATIONS,
+  MAX_REASONING_SUMMARY_CHARACTERS,
+} from '@/features/conversations/constants';
 import { codeContextsSchema, conversationTitleSchema } from '@/features/conversations/schemas';
 import { projectNameSchema } from '@/features/projects/schemas';
 import {
@@ -13,7 +17,12 @@ import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 import { codeSchema, promptSchema, queryLimitSchema } from '@/schemas/common';
 
-import { codeContextValidator, messageStatusValidator } from './validators';
+import {
+  codeContextValidator,
+  messageStatusValidator,
+  messageStepValidator,
+  reasoningSummaryValidator,
+} from './validators';
 
 const validateInternalKey = (key: string) => {
   const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
@@ -130,6 +139,53 @@ export const getMessageById = query({
   },
 });
 
+export const updateMessageProgress = mutation({
+  args: {
+    internalKey: v.string(),
+    messageId: v.id('messages'),
+    content: v.optional(v.string()),
+    step: v.optional(messageStepValidator),
+    reasoningSummary: v.optional(reasoningSummaryValidator),
+  },
+  handler: async ({ db }, { internalKey, messageId, content, step, reasoningSummary }) => {
+    validateInternalKey(internalKey);
+    const message = await db.get('messages', messageId);
+    if (!message || message.role !== 'assistant' || message.status !== 'processing') return false;
+    if (
+      !(await db.get('conversations', message.conversationId)) ||
+      !(await db.get('projects', message.projectId))
+    )
+      return false;
+
+    const steps = [...(message.steps ?? [])];
+    const reasoningSummaries = [...(message.reasoningSummaries ?? [])];
+    if (reasoningSummary) {
+      if (reasoningSummary.id.length > 128) throw new Error('Invalid summary ID');
+      const index = reasoningSummaries.findIndex((item) => item.id === reasoningSummary.id);
+      if (index >= 0) reasoningSummaries[index] = reasoningSummary;
+      else reasoningSummaries.push(reasoningSummary);
+      if (
+        reasoningSummaries.length > MAX_AGENT_NETWORK_ITERATIONS ||
+        reasoningSummaries.reduce((size, item) => size + item.text.length, 0) >
+          MAX_REASONING_SUMMARY_CHARACTERS
+      )
+        throw new Error('Reasoning summary is too long');
+    }
+    if (step) {
+      if (step.id.length > 128 || step.label.length > 200) throw new Error('Invalid progress step');
+      const index = steps.findIndex((item) => item.id === step.id);
+      if (index >= 0) steps[index] = step;
+      else steps.push(step);
+    }
+    await db.patch('messages', messageId, {
+      ...(content !== undefined ? { content: codeSchema.parse(content) } : {}),
+      ...(step ? { steps: steps.slice(-64) } : {}),
+      ...(reasoningSummary ? { reasoningSummaries } : {}),
+    });
+    return true;
+  },
+});
+
 export const updateMessageContent = mutation({
   args: {
     internalKey: v.string(),
@@ -141,9 +197,20 @@ export const updateMessageContent = mutation({
   handler: async ({ db }, { internalKey, messageId, content, status = 'completed' }) => {
     validateInternalKey(internalKey);
 
+    const message = await db.get('messages', messageId);
+    if (!message || message.status !== 'processing') return;
+
     await db.patch('messages', messageId, {
       content: codeSchema.parse(content),
       status,
+      steps: message.steps?.map((step) =>
+        step.status === 'running'
+          ? {
+              ...step,
+              status: status === 'completed' ? ('completed' as const) : ('failed' as const),
+            }
+          : step
+      ),
     });
   },
 });
@@ -157,6 +224,9 @@ export const updateMessageStatus = mutation({
 
   handler: async ({ db }, { internalKey, messageId, status }) => {
     validateInternalKey(internalKey);
+
+    const message = await db.get('messages', messageId);
+    if (!message || message.status !== 'processing') return;
 
     await db.patch('messages', messageId, { status });
   },

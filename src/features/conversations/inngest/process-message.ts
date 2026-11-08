@@ -1,11 +1,9 @@
-import { createAgent, createNetwork, createState, openai } from '@inngest/agent-kit';
+import { createAgent, openai } from '@inngest/agent-kit';
 import { NonRetriableError } from 'inngest';
 
 import {
   DEFAULT_CONVERSATION_TITLE,
   LAST_RECENT_MESSAGES,
-  MAX_AGENT_NETWORK_ITERATIONS,
-  MAX_CODING_AGENT_COMPLETION_TOKENS,
   MAX_TITLE_AGENT_COMPLETION_TOKENS,
 } from '@/features/conversations/constants';
 import { createCreateFilesTool } from '@/features/conversations/inngest/tools/create-files';
@@ -20,10 +18,12 @@ import { formatMessageWithContext } from '@/features/conversations/lib/utils';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
-import { CODING_AGENT_SYSTEM_PROMPT, TITLE_GENERATOR_SYSTEM_PROMPT } from '@/constants/prompts';
+import { TITLE_GENERATOR_SYSTEM_PROMPT } from '@/constants/prompts';
 import { env } from '@/env/server';
 import { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
+
+import { streamResponse } from './stream-response';
 
 interface MessageEvent {
   ownerId: string;
@@ -66,14 +66,18 @@ export const processMessage = inngest.createFunction(
           conversationId,
         });
 
-        if (!message || message.role !== 'assistant') return;
+        if (!message || message.role !== 'assistant' || message.status !== 'processing') return;
 
         await convex.mutation(api.system.updateMessageContent, {
           internalKey,
           messageId,
           status: 'incomplete',
-          content:
-            'My apologies, I encountered an error while processing your request. Let me know if you need anything else!',
+          content: [
+            message.content,
+            'I encountered an error before finishing. Some changes may already be applied; review them and send a follow-up to continue.',
+          ]
+            .filter(Boolean)
+            .join('\n\n'),
         });
       });
     },
@@ -105,7 +109,11 @@ export const processMessage = inngest.createFunction(
       });
     });
 
-    if (!assistantMessage || assistantMessage.role !== 'assistant')
+    if (
+      !assistantMessage ||
+      assistantMessage.role !== 'assistant' ||
+      assistantMessage.status !== 'processing'
+    )
       throw new NonRetriableError('Message not found');
 
     const userMessage = await step.run('get-user-message', async () => {
@@ -129,15 +137,28 @@ export const processMessage = inngest.createFunction(
       });
     });
 
+    await step.run('prepare-response', () =>
+      convex.mutation(api.system.updateMessageProgress, {
+        internalKey,
+        messageId,
+        step: { id: 'prepare', label: 'Preparing conversation', status: 'running' },
+      })
+    );
+
     const shouldGenerateTitle = conversation.title.trim() === DEFAULT_CONVERSATION_TITLE.trim();
 
     if (shouldGenerateTitle) {
+      // Hidden reasoning shares the title's small output budget.
+      const titleModelParameters = {
+        max_completion_tokens: MAX_TITLE_AGENT_COMPLETION_TOKENS,
+        reasoning_effort: 'none',
+      };
       const titleAgent = createAgent({
         name: 'title-generator',
         system: TITLE_GENERATOR_SYSTEM_PROMPT,
         model: openai({
           model: 'gpt-6-luna',
-          defaultParameters: { max_completion_tokens: MAX_TITLE_AGENT_COMPLETION_TOKENS },
+          defaultParameters: titleModelParameters,
         }),
       });
 
@@ -168,14 +189,28 @@ export const processMessage = inngest.createFunction(
       }
     }
 
-    const codingAgent = createAgent({
-      name: 'polaris',
-      description: 'An expert AI coding assistant',
-      system: CODING_AGENT_SYSTEM_PROMPT,
-      model: openai({
-        model: 'gpt-5',
-        defaultParameters: { max_completion_tokens: MAX_CODING_AGENT_COMPLETION_TOKENS },
-      }),
+    await step.run('conversation-ready', () =>
+      convex.mutation(api.system.updateMessageProgress, {
+        internalKey,
+        messageId,
+        step: { id: 'prepare', label: 'Conversation ready', status: 'completed' },
+      })
+    );
+
+    const result = await streamResponse({
+      internalKey,
+      messageId,
+      step,
+      messages: [
+        ...recentMessages.map((item) => ({
+          role: item.role,
+          content: formatMessageWithContext(item.content, item.context),
+        })),
+        {
+          role: 'user',
+          content: formatMessageWithContext(userMessage.content, userMessage.context),
+        },
+      ],
       tools: [
         createListFilesTool({ internalKey, projectId }),
         createReadFilesTool({ internalKey, projectId }),
@@ -187,62 +222,8 @@ export const processMessage = inngest.createFunction(
         createScrapeUrlsTool(),
       ],
     });
-
-    const network = createNetwork({
-      name: 'polaris-network',
-      agents: [codingAgent],
-      maxIter: MAX_AGENT_NETWORK_ITERATIONS,
-
-      router: ({ network }) => {
-        const lastResult = network.state.results.at(-1);
-        const hasTextResponse = lastResult?.output.some(
-          (message) => message.type === 'text' && message.role === 'assistant'
-        );
-        const hasToolCalls = lastResult?.output.some((message) => message.type === 'tool_call');
-
-        if (hasTextResponse && !hasToolCalls) return undefined;
-
-        return codingAgent;
-      },
-    });
-
-    const state = createState(
-      {},
-      {
-        messages: [
-          ...recentMessages.map((item) => ({
-            type: 'text' as const,
-            role: item.role,
-            content: formatMessageWithContext(item.content, item.context),
-          })),
-          {
-            type: 'text',
-            role: 'user',
-            content: formatMessageWithContext(userMessage.content, userMessage.context),
-          },
-        ],
-      }
-    );
-    // Agent Kit places state messages after the system/input prompt. Keep the
-    // current user request last in state, with no duplicate input prompt.
-    const result = await network.run('', { state });
-
-    const lastResult = result.state.results.at(-1);
-    const textMessage = lastResult?.output.find(
-      (message) => message.type === 'text' && message.role === 'assistant'
-    );
-
-    let assistantResponse = '';
-
-    if (textMessage?.type === 'text') {
-      assistantResponse =
-        typeof textMessage.content === 'string'
-          ? textMessage.content
-          : textMessage.content.map((c) => c.text).join('');
-    }
-
-    const completed =
-      !!assistantResponse.trim() && !lastResult?.output.some((item) => item.type === 'tool_call');
+    let assistantResponse = result.content;
+    const completed = result.completed;
 
     if (!completed) {
       assistantResponse = [

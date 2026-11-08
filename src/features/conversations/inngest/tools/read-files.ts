@@ -1,10 +1,10 @@
-import { createTool } from '@inngest/agent-kit';
-
 import { readFilesParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
 import { convex } from '@/lib/convex-client';
+
+import { createConversationTool as createTool } from './create-conversation-tool';
 
 interface ReadFilesToolOptions {
   internalKey: string;

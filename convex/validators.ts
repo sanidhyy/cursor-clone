@@ -12,3 +12,14 @@ export const messageStatusValidator = v.union(
   v.literal('cancelled'),
   v.literal('incomplete')
 );
+
+export const messageStepValidator = v.object({
+  id: v.string(),
+  label: v.string(),
+  status: v.union(v.literal('running'), v.literal('completed'), v.literal('failed')),
+});
+
+export const reasoningSummaryValidator = v.object({
+  id: v.string(),
+  text: v.string(),
+});

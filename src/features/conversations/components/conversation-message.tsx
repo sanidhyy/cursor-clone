@@ -12,9 +12,10 @@ import {
   MessageContent,
   MessageResponse,
 } from '@/components/ai-elements/message';
-import { Spinner } from '@/components/ui/spinner';
 
 import { CodeContexts } from './code-contexts';
+import { MessageProgress } from './message-progress';
+import { MessageThinking } from './message-thinking';
 
 interface ConversationMessageProps {
   data: Doc<'messages'>;
@@ -41,15 +42,15 @@ export const ConversationMessage = ({ data: message }: ConversationMessageProps)
     <Message key={message._id} from={message.role} className='group'>
       <MessageContent>
         {!!message.context?.length && <CodeContexts context={message.context} />}
-        {message.status === 'processing' ? (
-          <div className='flex items-center gap-2 text-muted-foreground'>
-            <Spinner />
-            <span>Thinking...</span>
-          </div>
-        ) : message.status === 'cancelled' ? (
+        {message.role === 'assistant' && <MessageProgress message={message} />}
+        {message.role === 'assistant' && <MessageThinking message={message} />}
+        {!!message.content && (
+          <MessageResponse isAnimating={message.status === 'processing'}>
+            {message.content}
+          </MessageResponse>
+        )}
+        {message.status === 'cancelled' && (
           <span className='pr-px text-muted-foreground italic'>Request cancelled</span>
-        ) : (
-          <MessageResponse>{message.content}</MessageResponse>
         )}
       </MessageContent>
 

@@ -1,8 +1,8 @@
-import { createTool } from '@inngest/agent-kit';
-
 import { scrapeUrlsParamsSchema } from '@/features/conversations/schemas/tools';
 
 import { firecrawl } from '@/lib/firecrawl';
+
+import { createConversationTool as createTool } from './create-conversation-tool';
 
 export const createScrapeUrlsTool = () => {
   return createTool({

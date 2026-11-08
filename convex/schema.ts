@@ -1,7 +1,12 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
-import { codeContextValidator, messageStatusValidator } from './validators';
+import {
+  codeContextValidator,
+  messageStatusValidator,
+  messageStepValidator,
+  reasoningSummaryValidator,
+} from './validators';
 
 const schema = defineSchema({
   projects: defineTable({
@@ -55,6 +60,8 @@ const schema = defineSchema({
     content: v.string(),
     context: v.optional(v.array(codeContextValidator)),
     status: v.optional(messageStatusValidator),
+    steps: v.optional(v.array(messageStepValidator)),
+    reasoningSummaries: v.optional(v.array(reasoningSummaryValidator)),
   })
     .index('by_conversation', ['conversationId'])
     .index('by_project_status', ['projectId', 'status']),
