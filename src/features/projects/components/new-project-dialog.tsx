@@ -1,12 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import ky from 'ky';
 import { toast } from 'sonner';
 
+import { PROJECT_TEMPLATES } from '@/features/projects/constants/project-templates';
+import { useNewProjectDraft } from '@/features/projects/hooks/use-new-project-draft';
 import { createProjectRequestSchema } from '@/features/projects/schemas';
 
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -19,6 +21,7 @@ import {
   PromptInputTools,
   type PromptInputMessage,
 } from '@/components/ai-elements/prompt-input';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -33,8 +36,15 @@ interface NewProjectDialogProps {
   onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+const TEMPLATE_ROWS = [
+  PROJECT_TEMPLATES.slice(0, 3),
+  PROJECT_TEMPLATES.slice(3, 7),
+  PROJECT_TEMPLATES.slice(7),
+];
+
 export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) => {
-  const [input, setInput] = useState('');
+  const { input, setInput, clearDraft } = useNewProjectDraft();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
@@ -59,7 +69,7 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
       toast.success('Project created');
       onOpenChange(false);
-      setInput('');
+      clearDraft();
 
       router.push(`/projects/${projectId}`);
     } catch (error) {
@@ -78,7 +88,10 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
         if (!isSubmitting) onOpenChange(next);
       }}
     >
-      <DialogContent showCloseButton={false} className='p-0 sm:max-w-lg'>
+      <DialogContent
+        showCloseButton={false}
+        className='max-h-[calc(100dvh-2rem)] gap-6 overflow-y-auto bg-transparent p-1 shadow-none ring-0 sm:max-w-4xl'
+      >
         <DialogHeader className='sr-only'>
           <DialogTitle>What do you want to build?</DialogTitle>
           <DialogDescription>
@@ -86,9 +99,10 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
           </DialogDescription>
         </DialogHeader>
 
-        <PromptInput onSubmit={handleSubmit} className='border-none!'>
+        <PromptInput onSubmit={handleSubmit} className='mx-auto max-w-xl rounded-xl bg-popover'>
           <PromptInputBody>
             <PromptInputTextarea
+              ref={inputRef}
               placeholder='Ask Polaris to build...'
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -104,6 +118,38 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
             />
           </PromptInputFooter>
         </PromptInput>
+
+        <div className='px-1 pb-1'>
+          <p id='project-templates-label' className='sr-only'>
+            Start with a template
+          </p>
+          <div
+            role='group'
+            aria-labelledby='project-templates-label'
+            className='flex flex-col items-center gap-3'
+          >
+            {TEMPLATE_ROWS.map((templates) => (
+              <div key={templates[0].title} className='flex flex-wrap justify-center gap-3'>
+                {templates.map((template) => (
+                  <Button
+                    key={template.title}
+                    type='button'
+                    variant='outline'
+                    className='h-10 px-3.5'
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      setInput(template.prompt);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <span aria-hidden='true'>{template.emoji}</span>
+                    {template.title}
+                  </Button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
