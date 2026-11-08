@@ -70,6 +70,7 @@ const stopSession = (session: PreviewSession) => {
   if (!session.active) return;
 
   session.active = false;
+
   session.unsubscribe?.();
 
   for (const process of session.processes) process.kill();
@@ -153,6 +154,7 @@ export const useWebContainer = ({
     session.started = true;
 
     const isCurrent = () => session.active && sessionRef.current === session;
+
     const fail = (error: unknown) => {
       if (!isCurrent()) return;
 
@@ -161,9 +163,11 @@ export const useWebContainer = ({
       setPreviewUrl(null);
       setStatus('error');
     };
+
     const appendOutput = (data: string) => {
       if (isCurrent()) setTerminalOutput((output) => output + data);
     };
+
     const pipeOutput = (process: WebContainerProcess) => {
       session.processes.push(process);
       void process.output.pipeTo(new WritableStream({ write: appendOutput })).catch(fail);
@@ -197,6 +201,7 @@ export const useWebContainer = ({
           setPreviewUrl(url);
           setStatus('running');
         });
+
         setStatus('installing');
 
         const installCommand = settings?.installCommand || 'npm install';

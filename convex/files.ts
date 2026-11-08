@@ -109,6 +109,7 @@ export const getFilePath = query({
       if (!file) break;
 
       path.unshift({ _id: file._id, name: file.name });
+
       currentId = file.parentId;
     }
 

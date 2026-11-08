@@ -9,6 +9,7 @@ import { SITE_CONFIG } from '@/config';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   variable: '--font-mono',

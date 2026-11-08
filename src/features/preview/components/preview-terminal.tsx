@@ -49,6 +49,7 @@ export const PreviewTerminal = ({ output }: PreviewTerminalProps) => {
     return () => {
       resizeObserver.disconnect();
       terminal.dispose();
+
       terminalRef.current = null;
       fitAddonRef.current = null;
     };

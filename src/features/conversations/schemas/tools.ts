@@ -20,24 +20,30 @@ const fileIdsSchema = z
   .max(100, 'Provide at most 100 file IDs');
 
 export const listFilesParamsSchema = z.object({});
+
 export const readFilesParamsSchema = z.object({
   fileIds: fileIdsSchema.describe('IDs of the files to read'),
 });
+
 export const deleteFilesParamsSchema = z.object({
   fileIds: fileIdsSchema.describe('IDs of the files or folders to delete'),
 });
+
 export const updateFileParamsSchema = z.object({
   fileId: idSchema.describe('ID of the file to update'),
   content: fileContentSchema.describe('The complete replacement file content'),
 });
+
 export const renameFileParamsSchema = z.object({
   fileId: idSchema.describe('ID of the file or folder to rename'),
   newName: fileNameSchema.describe('The new file or folder name'),
 });
+
 export const createFolderParamsSchema = z.object({
   name: fileNameSchema.describe('The folder name'),
   parentId: parentIdSchema,
 });
+
 export const createFilesParamsSchema = z.object({
   parentId: parentIdSchema,
   files: filesInputSchema.describe('Files to create in the same folder'),

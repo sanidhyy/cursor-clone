@@ -10,6 +10,7 @@ import { verifyAuth } from './auth';
 
 export const remove = mutation({
   args: { id: v.id('projects') },
+
   handler: async ({ auth, db, scheduler }, { id }) => {
     const user = await verifyAuth(auth);
     const project = await db.get('projects', id);
@@ -30,12 +31,14 @@ export const remove = mutation({
 
     // Removing the parent revokes access immediately. Cleanup continues in bounded batches.
     await db.delete('projects', id);
+
     await scheduler.runAfter(0, internal.projects.cleanup, { projectId: id });
   },
 });
 
 export const cleanup = internalMutation({
   args: { projectId: v.id('projects') },
+
   handler: async ({ db, storage, scheduler }, { projectId }): Promise<void> => {
     if (await db.get('projects', projectId)) throw new Error('Project must be deleted first');
 
@@ -46,11 +49,13 @@ export const cleanup = internalMutation({
 
     for (const file of files) {
       if (file.storageId) await storage.delete(file.storageId);
+
       await db.delete('files', file._id);
     }
 
     if (files.length) {
       await scheduler.runAfter(0, internal.projects.cleanup, { projectId });
+
       return;
     }
 
@@ -63,6 +68,7 @@ export const cleanup = internalMutation({
 
     if (messages.length) {
       await scheduler.runAfter(0, internal.projects.cleanup, { projectId });
+
       return;
     }
 
@@ -70,6 +76,7 @@ export const cleanup = internalMutation({
       .query('conversations')
       .withIndex('by_project', (q) => q.eq('projectId', projectId))
       .take(10);
+
     for (const conversation of conversations) await db.delete('conversations', conversation._id);
 
     if (conversations.length) await scheduler.runAfter(0, internal.projects.cleanup, { projectId });

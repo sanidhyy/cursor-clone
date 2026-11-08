@@ -16,6 +16,7 @@ interface TabProps {
 
 export const Tab = ({ fileId, isFirst, projectId }: TabProps) => {
   const file = useFile(fileId);
+
   const { activeTabId, previewTabId, setActiveTab, openFile, closeTab } = useEditor(
     projectId as Id<'projects'>
   );

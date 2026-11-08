@@ -11,9 +11,11 @@ export const useNewProjectDraft = () => {
 
   const persist = useCallback(() => {
     if (!dirty.current) return;
+
     try {
       if (draft.current) window.localStorage.setItem(STORAGE_KEY, draft.current);
       else window.localStorage.removeItem(STORAGE_KEY);
+
       dirty.current = false;
     } catch {
       // Keep the form usable when browser storage is unavailable or full.
@@ -32,15 +34,19 @@ export const useNewProjectDraft = () => {
 
     const flush = () => {
       if (timer.current !== null) clearTimeout(timer.current);
+
       timer.current = null;
+
       persist();
     };
+
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
     };
 
     window.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -52,10 +58,14 @@ export const useNewProjectDraft = () => {
     (value: string) => {
       draft.current = value;
       dirty.current = true;
+
       setInputState(value);
+
       if (timer.current !== null) clearTimeout(timer.current);
+
       timer.current = setTimeout(() => {
         timer.current = null;
+
         persist();
       }, SAVE_DELAY);
     },
@@ -64,9 +74,11 @@ export const useNewProjectDraft = () => {
 
   const clearDraft = useCallback(() => {
     if (timer.current !== null) clearTimeout(timer.current);
+
     timer.current = null;
     draft.current = '';
     dirty.current = true;
+
     setInputState('');
     persist();
   }, [persist]);

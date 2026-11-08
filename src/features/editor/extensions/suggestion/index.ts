@@ -111,6 +111,7 @@ const createDebouncePlugin = (fileName: string) => {
 
           if (!payload) {
             isWaitingForSuggestion = false;
+
             view.dispatch({ effects: setSuggestionEffect.of(null) });
 
             return null;
@@ -121,6 +122,7 @@ const createDebouncePlugin = (fileName: string) => {
           const suggestion = await fetcher(payload, currentAbortController.signal);
 
           isWaitingForSuggestion = false;
+
           view.dispatch({
             effects: setSuggestionEffect.of(suggestion),
           });
@@ -129,6 +131,7 @@ const createDebouncePlugin = (fileName: string) => {
 
       destroy() {
         if (debounceTimer !== null) clearTimeout(debounceTimer);
+
         if (currentAbortController !== null) currentAbortController.abort();
       }
     }
@@ -147,6 +150,7 @@ const renderPlugin = ViewPlugin.fromClass(
       const suggestionChanged = update.transactions.some((transaction) =>
         transaction.effects.some((effect) => effect.is(setSuggestionEffect))
       );
+
       const shouldRebuild = update.docChanged || update.selectionSet || suggestionChanged;
 
       if (shouldRebuild) this.decorations = this.build(update.view);

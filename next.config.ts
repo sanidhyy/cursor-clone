@@ -6,6 +6,7 @@ import '@/env/server';
 const nextConfig: NextConfig = {
   agentRules: false,
   devIndicators: false,
+
   headers: () => {
     return [
       {
@@ -23,6 +24,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
   images: {
     unoptimized: true,
   },

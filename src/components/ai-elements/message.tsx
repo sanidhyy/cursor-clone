@@ -169,6 +169,7 @@ export type MessageBranchContentProps = HTMLAttributes<HTMLDivElement>;
 
 export const MessageBranchContent = ({ children, ...props }: MessageBranchContentProps) => {
   const { currentBranch, setBranches, branches } = useMessageBranch();
+
   const childrenArray = useMemo(
     () => (Array.isArray(children) ? children : [children]),
     [children]

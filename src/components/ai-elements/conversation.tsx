@@ -131,6 +131,7 @@ export const ConversationDownload = ({
 
     link.href = url;
     link.download = filename;
+
     document.body.append(link);
     link.click();
     link.remove();

@@ -113,6 +113,7 @@ export const ExportGitHubPopover = ({ projectId }: ExportGitHubPopoverProps) => 
       await ky.post('/api/github/export/reset', {
         json: projectRequestSchema.parse({ projectId }),
       });
+
       setOpen(false);
     });
 

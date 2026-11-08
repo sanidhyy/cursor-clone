@@ -8,12 +8,17 @@ import { Spinner } from '@/components/ui/spinner';
 export const MessageProgress = ({ message }: { message: Doc<'messages'> }) => {
   const processing = message.status === 'processing';
   const [elapsed, setElapsed] = useState(0);
+
   useEffect(() => {
     if (!processing) return;
+
     const update = () =>
       setElapsed(Math.max(0, Math.floor((Date.now() - message._creationTime) / 1000)));
+
     update();
+
     const timer = setInterval(update, 1000);
+
     return () => clearInterval(timer);
   }, [processing, message._creationTime]);
 

@@ -70,9 +70,12 @@ export const CreateInput = ({ type, level, onSubmit, onCancel }: CreateInputProp
         onBlur={handleSubmit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') handleSubmit();
+
           if (e.key === 'Escape' && !isPending) {
             e.preventDefault();
+
             cancelled.current = true;
+
             onCancel();
           }
         }}

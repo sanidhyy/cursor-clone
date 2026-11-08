@@ -62,6 +62,7 @@ export const PreviewSettingsPopover = ({
 
   const handleOpenChange = (isOpen: boolean) => {
     if (form.state.isSubmitting) return;
+
     if (isOpen) {
       form.reset({
         installCommand: initialValues?.installCommand || '',

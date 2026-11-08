@@ -81,6 +81,7 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
       reader.onloadend = () => resolve(reader.result as string);
       // oxlint-disable-next-line eslint-plugin-unicorn(prefer-add-event-listener)
       reader.onerror = () => resolve(null);
+
       reader.readAsDataURL(blob);
     });
   } catch {
@@ -166,6 +167,7 @@ const captureScreenshot = async (): Promise<File | null> => {
     }
 
     video.pause();
+
     video.srcObject = null;
   }
 };
@@ -582,6 +584,7 @@ export const PromptInput = ({
       }
 
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
+
       const sized = accepted.filter(withinSize);
 
       if (accepted.length > 0 && sized.length === 0) {
@@ -653,6 +656,7 @@ export const PromptInput = ({
       }
 
       const withinSize = (f: File) => (maxFileSize ? f.size <= maxFileSize : true);
+
       const sized = accepted.filter(withinSize);
 
       if (accepted.length > 0 && sized.length === 0) {
@@ -703,6 +707,7 @@ export const PromptInput = ({
 
   const add = usingProvider ? addWithProviderValidation : addLocal;
   const remove = usingProvider ? controller.attachments.remove : removeLocal;
+
   const openFileDialog = usingProvider
     ? controller.attachments.openFileDialog
     : openFileDialogLocal;
@@ -746,10 +751,12 @@ export const PromptInput = ({
         e.preventDefault();
       }
     };
+
     const onDrop = (e: DragEvent) => {
       if (e.dataTransfer?.types?.includes('Files')) {
         e.preventDefault();
       }
+
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         add(e.dataTransfer.files);
       }
@@ -774,10 +781,12 @@ export const PromptInput = ({
         e.preventDefault();
       }
     };
+
     const onDrop = (e: DragEvent) => {
       if (e.dataTransfer?.types?.includes('Files')) {
         e.preventDefault();
       }
+
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         add(e.dataTransfer.files);
       }
@@ -857,6 +866,7 @@ export const PromptInput = ({
       submissionPending.current = true;
 
       const form = event.currentTarget;
+
       const text = usingProvider
         ? controller.textInput.value
         : (() => {
@@ -978,6 +988,7 @@ export const PromptInputTextarea = ({
 
         // Check if the submit button is disabled before submitting
         const { form } = e.currentTarget;
+
         const submitButton = form?.querySelector(
           'button[type="submit"]'
         ) as HTMLButtonElement | null;

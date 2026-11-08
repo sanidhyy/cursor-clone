@@ -65,11 +65,13 @@ export const useFileAutosave = (projectId: Id<'projects'>) => {
 
         try {
           await updateFile({ id: draft.fileId, content: draft.content });
+
           store.finish(draft);
         } catch (error) {
           if (useFileSaveStore.getState().saves.get(draft.fileId)?.draft !== draft) return;
 
           store.finish(draft, 'error');
+
           toast.error(
             getErrorMessage(error, 'Unable to save edits. Your draft is kept here; retry saving.')
           );
@@ -77,6 +79,7 @@ export const useFileAutosave = (projectId: Id<'projects'>) => {
       });
 
       writes.set(draft.fileId, task);
+
       void task.finally(() => {
         if (writes.get(draft.fileId) === task) writes.delete(draft.fileId);
       });
@@ -90,6 +93,7 @@ export const useFileAutosave = (projectId: Id<'projects'>) => {
 
       useFileSaveStore.getState().setDraft(draft);
       clearTimeout(timers.current.get(fileId));
+
       timers.current.set(
         fileId,
         setTimeout(() => {

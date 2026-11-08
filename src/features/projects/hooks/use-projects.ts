@@ -13,16 +13,23 @@ export const useDeleteProject = () => {
 
   return async (id: Id<'projects'>) => {
     await remove({ id });
+
     useChatStore.setState((state) => {
       const drafts = new Map(state.drafts);
+
       drafts.delete(id);
+
       return { drafts };
     });
+
     useEditorStore.setState((state) => {
       const tabs = new Map(state.tabs);
+
       tabs.delete(id);
+
       return { tabs };
     });
+
     useFileSaveStore.setState((state) => ({
       saves: new Map([...state.saves].filter(([, save]) => save.draft.projectId !== id)),
     }));
@@ -44,6 +51,7 @@ export const useRenameProject = () => {
     (localStore, { id: projectId, name: projectName }) => {
       // eslint-disable-next-line react-hooks/purity -- Optimistic update callbacks access external state
       const now = Date.now();
+
       const existingProject = localStore.getQuery(api.projects.getById, {
         id: projectId as Id<'projects'>,
       });

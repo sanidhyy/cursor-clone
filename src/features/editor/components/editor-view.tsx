@@ -29,6 +29,7 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
   const filePath = useFilePath(activeTabId);
   const { queueSave, retry } = useFileAutosave(projectId as Id<'projects'>);
   const saves = useFileSaveStore((state) => state.saves);
+
   const hasSaveError = [...saves.values()].some(
     (save) => save.draft.projectId === projectId && save.status === 'error'
   );
@@ -96,6 +97,7 @@ export const EditorView = ({ projectId }: EditorViewProps) => {
                   path: filePath?.map((part) => part.name).join('/') || activeFile.name,
                   code,
                 });
+
                 document.getElementById(`chat-input-${projectId}`)?.focus();
               } catch (error) {
                 toast.error(getErrorMessage(error, 'Unable to add selection to chat'));

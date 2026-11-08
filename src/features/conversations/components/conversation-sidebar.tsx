@@ -72,6 +72,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
     conversations === undefined ||
     (!!activeConversationId &&
       (activeConversation === undefined || conversationMessages === undefined));
+
   const isProcessing = conversationMessages?.some((msg) => msg.status === 'processing');
 
   const handleCreateConversation = async () => {
@@ -127,6 +128,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
           context: submittedContext,
         }),
       });
+
       useChatStore.getState().clearSubmitted(draftProjectId, message.text, submittedContext);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Message failed to send'));

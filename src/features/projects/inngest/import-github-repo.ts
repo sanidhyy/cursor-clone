@@ -56,11 +56,13 @@ export const importGitHubRepo = inngest.createFunction(
 
     const tree = await step.run('fetch-repo-tree', async () => {
       const { data: repository } = await octokit.rest.repos.get({ owner, repo });
+
       const { data: ref } = await octokit.rest.git.getRef({
         owner,
         repo,
         ref: `heads/${repository.default_branch}`,
       });
+
       const { data } = await octokit.rest.git.getTree({
         owner,
         repo,

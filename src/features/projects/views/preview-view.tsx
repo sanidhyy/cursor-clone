@@ -41,12 +41,14 @@ export const PreviewView = ({ projectId }: PreviewViewProps) => {
   });
 
   const isLoading = status === 'booting' || status === 'installing' || status === 'starting';
+
   const loadingLabel =
     status === 'booting'
       ? 'Starting container...'
       : status === 'installing'
         ? 'Installing dependencies...'
         : 'Starting development server...';
+
   const waitingMessage =
     !project || isProcessing === undefined
       ? 'Loading project...'

@@ -18,6 +18,7 @@ import { convex } from '@/lib/convex-client';
 import type { createConversationTool } from './tools/create-conversation-tool';
 
 type ConversationTool = ReturnType<typeof createConversationTool>;
+
 type ProgressStep = NonNullable<Doc<'messages'>['steps']>[number];
 
 const toolLabels: Record<string, string> = {
@@ -45,6 +46,7 @@ export const streamResponse = async ({
   step: GetStepTools<typeof inngest>;
 }) => {
   const model = createOpenAI({ apiKey: env.OPENAI_API_KEY }).responses('gpt-5');
+
   const definitions = Object.fromEntries(
     tools.map((definition) => [
       definition.name,
@@ -54,6 +56,7 @@ export const streamResponse = async ({
       }),
     ])
   );
+
   const publish = async (progress: {
     content?: string;
     step?: ProgressStep;
@@ -64,26 +67,32 @@ export const streamResponse = async ({
       messageId,
       ...progress,
     });
+
     if (!active) throw new NonRetriableError('Request is no longer active');
   };
+
   let content = '';
   let summaryCharacters = 0;
 
   for (let iteration = 0; iteration < MAX_AGENT_NETWORK_ITERATIONS; iteration++) {
     const modelStepId = `model-${iteration}`;
     const prefix = content ? `${content}\n\n` : '';
+
     const result = await step.run(`stream-model-${iteration}`, async () => {
       let text = '';
       let summary = '';
       let lastReasoningPart: string | undefined;
       let lastPublished = 0;
       let label = iteration === 0 ? 'Analyzing your request' : 'Planning the next step';
+
       await publish({
         content,
         step: { id: modelStepId, label, status: 'running' },
         reasoningSummary: { id: modelStepId, text: '' },
       });
+
       const controller = new AbortController();
+
       const response = streamText({
         abortSignal: controller.signal,
         model,
@@ -96,17 +105,22 @@ export const streamResponse = async ({
         },
         maxRetries: 0,
       });
+
       try {
         for await (const chunk of response.fullStream) {
           if (chunk.type === 'error') throw chunk.error;
+
           let changedPhase = false;
+
           if (chunk.type === 'text-delta') {
             changedPhase = !text;
             text += chunk.text;
             label = 'Writing response';
           } else if (chunk.type === 'reasoning-delta') {
             changedPhase = label !== 'Thinking';
+
             const separator = lastReasoningPart && lastReasoningPart !== chunk.id ? '\n\n' : '';
+
             summary = (summary + separator + chunk.text).slice(
               0,
               Math.max(0, MAX_REASONING_SUMMARY_CHARACTERS - summaryCharacters)
@@ -117,6 +131,7 @@ export const streamResponse = async ({
             changedPhase = true;
             label = `Preparing: ${toolLabels[chunk.toolName] ?? 'Using a tool'}`;
           }
+
           // Responses exposes reasoning summaries through these deltas. Opaque
           // reasoning context is kept only in the server's durable checkpoints.
           if (changedPhase || Date.now() - lastPublished >= 250) {
@@ -125,11 +140,14 @@ export const streamResponse = async ({
               step: { id: modelStepId, label, status: 'running' },
               reasoningSummary: { id: modelStepId, text: summary },
             });
+
             lastPublished = Date.now();
           }
         }
+
         const toolCalls = await response.toolCalls;
         const finishReason = await response.finishReason;
+
         const reasoning = (await response.reasoning)
           .filter((part) => part.type === 'reasoning')
           .map((part) => ({
@@ -137,19 +155,24 @@ export const streamResponse = async ({
             text: part.text,
             providerOptions: part.providerMetadata,
           }));
+
         await publish({
           content: prefix + text,
           step: { id: modelStepId, label, status: 'completed' },
           reasoningSummary: { id: modelStepId, text: summary },
         });
+
         return { text, toolCalls, finishReason, reasoning, summaryLength: summary.length };
       } catch (error) {
         controller.abort();
+
         throw error;
       }
     });
+
     content = prefix + result.text;
     summaryCharacters += result.summaryLength;
+
     messages.push({
       role: 'assistant',
       content: [
@@ -172,17 +195,23 @@ export const streamResponse = async ({
     for (const [index, call] of result.toolCalls.entries()) {
       const id = `tool-${iteration}-${index}`;
       const label = toolLabels[call.toolName] ?? 'Using a tool';
+
       await step.run(`start-${id}`, () => publish({ step: { id, label, status: 'running' } }));
+
       const definition = tools.find((candidate) => candidate.name === call.toolName);
+
       const output =
         !call.invalid && definition
           ? await definition.handler(call.input, { step })
           : 'Error: Invalid tool arguments. Correct them and try again.';
+
       const value = typeof output === 'string' ? output : JSON.stringify(output ?? null);
       const failed = /^error\b/i.test(value) || /"error"\s*:/.test(value);
+
       await step.run(`finish-${id}`, () =>
         publish({ step: { id, label, status: failed ? 'failed' : 'completed' } })
       );
+
       messages.push({
         role: 'tool',
         content: [
@@ -196,5 +225,6 @@ export const streamResponse = async ({
       });
     }
   }
+
   return { content, completed: false };
 };

@@ -55,6 +55,7 @@ export const Navbar = ({ projectId }: NavbarProps) => {
     if (!project) return;
 
     cancelled.current = false;
+
     setName(project.name);
     setIsRenaming(true);
   };
@@ -80,6 +81,7 @@ export const Navbar = ({ projectId }: NavbarProps) => {
 
     void runRename(async () => {
       await renameProject({ id: project._id, name: result.data });
+
       setIsRenaming(false);
     });
   };
@@ -88,6 +90,7 @@ export const Navbar = ({ projectId }: NavbarProps) => {
     if (e.key === 'Enter') handleSubmit();
     else if (e.key === 'Escape' && !isSavingName) {
       cancelled.current = true;
+
       setIsRenaming(false);
     }
   };

@@ -9,10 +9,12 @@ import { verifyAuth } from './auth';
 
 export const remove = mutation({
   args: { id: v.id('conversations') },
+
   handler: async ({ auth, db, scheduler }, { id }) => {
     const user = await verifyAuth(auth);
     const conversation = await db.get('conversations', id);
     const project = conversation && (await db.get('projects', conversation.projectId));
+
     if (!project || project.ownerId !== user.subject)
       throw new ConvexError('Conversation not found');
 
@@ -21,24 +23,30 @@ export const remove = mutation({
       .withIndex('by_conversation', (q) => q.eq('conversationId', id))
       .filter((q) => q.eq(q.field('status'), 'processing'))
       .first();
+
     if (processing)
       throw new ConvexError('Stop the active AI request before deleting this conversation');
 
     await db.delete('conversations', id);
+
     await scheduler.runAfter(0, internal.conversations.cleanup, { conversationId: id });
   },
 });
 
 export const cleanup = internalMutation({
   args: { conversationId: v.id('conversations') },
+
   handler: async ({ db, scheduler }, { conversationId }): Promise<void> => {
     if (await db.get('conversations', conversationId))
       throw new Error('Conversation must be deleted first');
+
     const messages = await db
       .query('messages')
       .withIndex('by_conversation', (q) => q.eq('conversationId', conversationId))
       .take(10);
+
     for (const message of messages) await db.delete('messages', message._id);
+
     if (messages.length)
       await scheduler.runAfter(0, internal.conversations.cleanup, { conversationId });
   },

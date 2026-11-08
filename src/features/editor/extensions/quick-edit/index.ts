@@ -126,6 +126,7 @@ const createQuickEditTooltip = (state: EditorState, fileName: string): readonly 
             );
 
             if (controller.signal.aborted || !editorView) return;
+
             if (editedCode !== null) {
               editorView.dispatch({
                 changes: {

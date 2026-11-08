@@ -6,9 +6,11 @@ import { Spinner } from '@/components/ui/spinner';
 
 export const MessageThinking = ({ message }: { message: Doc<'messages'> }) => {
   const summaries = message.reasoningSummaries?.filter((summary) => summary.text.trim());
+
   if (!summaries?.length) return null;
 
   const processing = message.status === 'processing';
+
   const thinking =
     processing &&
     message.steps?.some((step) => step.status === 'running' && step.label === 'Thinking');

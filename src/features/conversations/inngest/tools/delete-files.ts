@@ -41,11 +41,13 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
               if (selected.has(parentId)) return false;
 
               visited.add(parentId);
+
               parentId = filesMap.get(parentId)?.parentId;
             }
 
             return true;
           });
+
           const results: string[] = [];
 
           for (const fileId of roots) {
@@ -53,6 +55,7 @@ export const createDeleteFilesTool = ({ internalKey, projectId }: DeleteFilesToo
 
             try {
               await convex.mutation(api.system.deleteFile, { internalKey, projectId, fileId });
+
               results.push(`Deleted ${file.type} "${file.name}" successfully`);
             } catch (error) {
               results.push(

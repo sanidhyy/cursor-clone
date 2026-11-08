@@ -96,6 +96,7 @@ const selectionIdlePlugin = ViewPlugin.fromClass(
 
     constructor(private readonly view: CodeMirrorEditorView) {
       this.ownerWindow = view.dom.ownerDocument.defaultView!;
+
       this.ownerWindow.addEventListener('pointerup', this.finishSelection);
       this.ownerWindow.addEventListener('pointercancel', this.finishSelection);
       this.ownerWindow.addEventListener('blur', this.finishSelection);
@@ -104,11 +105,13 @@ const selectionIdlePlugin = ViewPlugin.fromClass(
 
     private cancelTimer() {
       if (this.timer !== null) clearTimeout(this.timer);
+
       this.timer = null;
     }
 
     private schedule() {
       this.cancelTimer();
+
       if (
         this.selecting ||
         this.view.state.selection.main.empty ||
@@ -118,6 +121,7 @@ const selectionIdlePlugin = ViewPlugin.fromClass(
 
       this.timer = setTimeout(() => {
         this.timer = null;
+
         this.view.dispatch({ effects: showSelectionTooltip.of(true) });
       }, SELECTION_TOOLTIP_DELAY);
     }
@@ -127,13 +131,16 @@ const selectionIdlePlugin = ViewPlugin.fromClass(
       if (event.target instanceof Element && event.target.closest('.cm-tooltip')) return;
 
       this.selecting = true;
+
       this.cancelTimer();
       this.view.dispatch({ effects: showSelectionTooltip.of(false) });
     }
 
     private finishSelection = () => {
       if (!this.selecting) return;
+
       this.selecting = false;
+
       this.schedule();
     };
 

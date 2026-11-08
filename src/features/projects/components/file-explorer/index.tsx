@@ -31,6 +31,7 @@ export const FileExplorer = ({ projectId }: FileExplorerProps) => {
   const project = useProject(projectId);
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
+
   const rootFiles = useFolderContents({
     projectId: projectId as Id<'projects'>,
     enabled: isOpen,

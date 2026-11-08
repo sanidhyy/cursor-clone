@@ -85,6 +85,7 @@ export const createMessage = mutation({
     validateInternalKey(internalKey);
 
     const conversation = await db.get('conversations', conversationId);
+
     if (
       !conversation ||
       conversation.projectId !== projectId ||
@@ -147,9 +148,12 @@ export const updateMessageProgress = mutation({
     step: v.optional(messageStepValidator),
     reasoningSummary: v.optional(reasoningSummaryValidator),
   },
+
   handler: async ({ db }, { internalKey, messageId, content, step, reasoningSummary }) => {
     validateInternalKey(internalKey);
+
     const message = await db.get('messages', messageId);
+
     if (!message || message.role !== 'assistant' || message.status !== 'processing') return false;
     if (
       !(await db.get('conversations', message.conversationId)) ||
@@ -159,11 +163,15 @@ export const updateMessageProgress = mutation({
 
     const steps = [...(message.steps ?? [])];
     const reasoningSummaries = [...(message.reasoningSummaries ?? [])];
+
     if (reasoningSummary) {
       if (reasoningSummary.id.length > 128) throw new Error('Invalid summary ID');
+
       const index = reasoningSummaries.findIndex((item) => item.id === reasoningSummary.id);
+
       if (index >= 0) reasoningSummaries[index] = reasoningSummary;
       else reasoningSummaries.push(reasoningSummary);
+
       if (
         reasoningSummaries.length > MAX_AGENT_NETWORK_ITERATIONS ||
         reasoningSummaries.reduce((size, item) => size + item.text.length, 0) >
@@ -171,17 +179,22 @@ export const updateMessageProgress = mutation({
       )
         throw new Error('Reasoning summary is too long');
     }
+
     if (step) {
       if (step.id.length > 128 || step.label.length > 200) throw new Error('Invalid progress step');
+
       const index = steps.findIndex((item) => item.id === step.id);
+
       if (index >= 0) steps[index] = step;
       else steps.push(step);
     }
+
     await db.patch('messages', messageId, {
       ...(content !== undefined ? { content: codeSchema.parse(content) } : {}),
       ...(step ? { steps: steps.slice(-64) } : {}),
       ...(reasoningSummary ? { reasoningSummaries } : {}),
     });
+
     return true;
   },
 });
@@ -198,6 +211,7 @@ export const updateMessageContent = mutation({
     validateInternalKey(internalKey);
 
     const message = await db.get('messages', messageId);
+
     if (!message || message.status !== 'processing') return;
 
     await db.patch('messages', messageId, {
@@ -226,6 +240,7 @@ export const updateMessageStatus = mutation({
     validateInternalKey(internalKey);
 
     const message = await db.get('messages', messageId);
+
     if (!message || message.status !== 'processing') return;
 
     await db.patch('messages', messageId, { status });
@@ -456,6 +471,7 @@ export const createFiles = mutation({
           fileId: existingFile._id,
           error: 'File or Folder already exists',
         });
+
         continue;
       }
 

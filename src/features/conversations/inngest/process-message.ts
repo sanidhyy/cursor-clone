@@ -48,6 +48,7 @@ export const processMessage = inngest.createFunction(
     onFailure: async ({ event, step }) => {
       const { messageId, conversationId, projectId, ownerId } = event.data.event
         .data as MessageEvent;
+
       const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
 
       await step.run('update-message-on-failure', async () => {
@@ -153,6 +154,7 @@ export const processMessage = inngest.createFunction(
         max_completion_tokens: MAX_TITLE_AGENT_COMPLETION_TOKENS,
         reasoning_effort: 'none',
       };
+
       const titleAgent = createAgent({
         name: 'title-generator',
         system: TITLE_GENERATOR_SYSTEM_PROMPT,
@@ -222,6 +224,7 @@ export const processMessage = inngest.createFunction(
         createScrapeUrlsTool(),
       ],
     });
+
     let assistantResponse = result.content;
     const completed = result.completed;
 

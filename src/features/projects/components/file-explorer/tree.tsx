@@ -37,12 +37,15 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
   const { isPending: isDeleting, run: runDelete } = useAsyncAction(
     'Unable to delete file or folder'
   );
+
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
+
   const renameFile = useRenameFile({
     projectId: projectId as Id<'projects'>,
     parentId: file.parentId,
   });
+
   const deleteFile = useDeleteFile();
 
   const { openFile, closeTab, activeTabId } = useEditor(projectId as Id<'projects'>);
@@ -90,6 +93,7 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
   const handleDelete = () => {
     void runDelete(async () => {
       await deleteFile({ id: file._id });
+
       closeTab(file._id);
     });
   };
@@ -128,6 +132,7 @@ export const Tree = ({ file, level = 0, projectId }: TreeProps) => {
   }
 
   const folderName = file.name;
+
   const folderContentRender = (
     <>
       <div className='flex items-center gap-0.5'>
