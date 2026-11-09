@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { openai } from '@ai-sdk/openai';
 import { auth } from '@clerk/nextjs/server';
 import { generateText, Output } from 'ai';
 
@@ -8,6 +7,8 @@ import {
   quickEditRequestSchema,
   quickEditResponseSchema,
 } from '@/features/editor/schemas/quick-edit';
+import { aiSettingsRequiredResponse, getOpenAI } from '@/features/settings/server/ai-settings';
+import { getAISettingsErrorMessage } from '@/features/settings/server/errors';
 
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
 import { QUICK_EDIT_PROMPT } from '@/constants/prompts';
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest) {
         { error: validationError?.issues[0]?.message || 'Invalid Request' },
         { status: BAD_REQUEST }
       );
+
+    const openai = await getOpenAI(userId);
 
     const urls: string[] = validatedData.instruction.match(URL_REGEX) || [];
     let documentationContext = '';
@@ -70,11 +73,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ editedCode: output.editedCode });
   } catch (error) {
-    console.error('[QUICK_EDIT_ERROR]: ', error);
+    const settingsResponse = aiSettingsRequiredResponse(error);
+
+    if (settingsResponse) return settingsResponse;
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to generate edit',
+        error: getAISettingsErrorMessage(error),
       },
       { status: INTERNAL_SERVER_ERROR }
     );

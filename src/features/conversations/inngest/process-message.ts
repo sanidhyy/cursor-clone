@@ -1,4 +1,4 @@
-import { createAgent, openai } from '@inngest/agent-kit';
+import { generateText } from 'ai';
 import { NonRetriableError } from 'inngest';
 
 import {
@@ -15,6 +15,8 @@ import { createRenameFileTool } from '@/features/conversations/inngest/tools/ren
 import { createScrapeUrlsTool } from '@/features/conversations/inngest/tools/scrape-urls';
 import { createUpdateFileTool } from '@/features/conversations/inngest/tools/update-file';
 import { formatMessageWithContext } from '@/features/conversations/lib/utils';
+import { AISettingsRequiredError, getOpenAI } from '@/features/settings/server/ai-settings';
+import { getAISettingsErrorMessage } from '@/features/settings/server/errors';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -149,45 +151,35 @@ export const processMessage = inngest.createFunction(
     const shouldGenerateTitle = conversation.title.trim() === DEFAULT_CONVERSATION_TITLE.trim();
 
     if (shouldGenerateTitle) {
-      // Hidden reasoning shares the title's small output budget.
-      const titleModelParameters = {
-        max_completion_tokens: MAX_TITLE_AGENT_COMPLETION_TOKENS,
-        reasoning_effort: 'none',
-      };
+      const title = await step.run('generate-conversation-title', async () => {
+        try {
+          const openai = await getOpenAI(ownerId);
+          const { text } = await generateText({
+            model: openai.chat('gpt-6-luna'),
+            system: TITLE_GENERATOR_SYSTEM_PROMPT,
+            prompt: message,
+            maxOutputTokens: MAX_TITLE_AGENT_COMPLETION_TOKENS,
+            providerOptions: { openai: { reasoningEffort: 'none' } },
+            maxRetries: 0,
+            abortSignal: AbortSignal.timeout(30_000),
+          });
 
-      const titleAgent = createAgent({
-        name: 'title-generator',
-        system: TITLE_GENERATOR_SYSTEM_PROMPT,
-        model: openai({
-          model: 'gpt-6-luna',
-          defaultParameters: titleModelParameters,
-        }),
+          return text.trim();
+        } catch (error) {
+          throw error instanceof AISettingsRequiredError
+            ? new NonRetriableError(error.message)
+            : new Error(getAISettingsErrorMessage(error));
+        }
       });
 
-      const { output } = await titleAgent.run(message, { step });
-
-      const textMessage = output.find(
-        (message) => message.type === 'text' && message.role === 'assistant'
-      );
-
-      if (textMessage?.type === 'text') {
-        const title =
-          typeof textMessage.content === 'string'
-            ? textMessage.content.trim()
-            : textMessage.content
-                .map((content) => content.text)
-                .join('')
-                .trim();
-
-        if (!!title.trim()) {
-          await step.run('update-conversation-title', async () => {
-            await convex.mutation(api.system.updateConversationTitle, {
-              internalKey,
-              conversationId,
-              title: title.trim(),
-            });
-          });
-        }
+      if (title) {
+        await step.run('update-conversation-title', () =>
+          convex.mutation(api.system.updateConversationTitle, {
+            internalKey,
+            conversationId,
+            title,
+          })
+        );
       }
     }
 
@@ -200,6 +192,7 @@ export const processMessage = inngest.createFunction(
     );
 
     const result = await streamResponse({
+      ownerId,
       internalKey,
       messageId,
       step,

@@ -14,6 +14,7 @@ import {
 import { sendMessageRequestSchema } from '@/features/conversations/schemas';
 import { useChatStore } from '@/features/conversations/store/use-chat-store';
 import { projectRequestSchema } from '@/features/projects/schemas';
+import { handleAISettingsRequired } from '@/features/settings/lib';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 import {
@@ -131,6 +132,7 @@ export const ConversationSidebar = ({ projectId }: ConversationSidebarProps) => 
 
       useChatStore.getState().clearSubmitted(draftProjectId, message.text, submittedContext);
     } catch (error) {
+      handleAISettingsRequired(error);
       toast.error(getErrorMessage(error, 'Message failed to send'));
 
       return false;

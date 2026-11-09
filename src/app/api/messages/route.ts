@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
 import { sendMessageRequestSchema } from '@/features/conversations/schemas';
+import { aiSettingsRequiredResponse, getOpenAI } from '@/features/settings/server/ai-settings';
 
 import { api } from '@/../convex/_generated/api';
 import type { Id } from '@/../convex/_generated/dataModel';
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
       if (!file || file.type !== 'file' || file.storageId)
         return NextResponse.json({ error: 'Context file not found' }, { status: NOT_FOUND });
     }
+
+    await getOpenAI(userId);
 
     const processingMessages = await convex.query(api.system.processingMessages, {
       internalKey,
@@ -112,6 +115,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ eventId: event.ids[0], messageId: assistantMessageId });
   } catch (error) {
+    const settingsResponse = aiSettingsRequiredResponse(error);
+
+    if (settingsResponse) return settingsResponse;
+
     console.error('[MESSAGES_ERROR]: ', error);
 
     return NextResponse.json(

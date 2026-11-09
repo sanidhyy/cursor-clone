@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { openai } from '@ai-sdk/openai';
 import { auth } from '@clerk/nextjs/server';
 import { generateText, Output } from 'ai';
 
@@ -8,6 +7,8 @@ import {
   suggestionRequestSchema,
   suggestionResponseSchema,
 } from '@/features/editor/schemas/suggestion';
+import { aiSettingsRequiredResponse, getOpenAI } from '@/features/settings/server/ai-settings';
+import { getAISettingsErrorMessage } from '@/features/settings/server/errors';
 
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
 import { SUGGESTION_PROMPT } from '@/constants/prompts';
@@ -28,6 +29,8 @@ export async function POST(req: NextRequest) {
         { status: BAD_REQUEST }
       );
 
+    const openai = await getOpenAI(userId);
+
     const prompt = SUGGESTION_PROMPT(validatedData);
 
     const { output } = await generateText({
@@ -40,11 +43,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ suggestion: output.suggestion });
   } catch (error) {
-    console.error('[SUGGESTION_ERROR]: ', error);
+    const settingsResponse = aiSettingsRequiredResponse(error);
+
+    if (settingsResponse) return settingsResponse;
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to generate suggestion',
+        error: getAISettingsErrorMessage(error),
       },
       { status: INTERNAL_SERVER_ERROR }
     );

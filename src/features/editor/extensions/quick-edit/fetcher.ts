@@ -7,6 +7,7 @@ import {
   quickEditRequestSchema,
   quickEditResponseSchema,
 } from '@/features/editor/schemas/quick-edit';
+import { handleAISettingsRequired } from '@/features/settings/lib';
 
 import { getErrorMessage } from '@/lib/errors';
 
@@ -43,6 +44,7 @@ export const fetcher = async (
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') return null;
 
+    handleAISettingsRequired(error);
     toast.error(getErrorMessage(error, 'Failed to fetch AI quick edit'));
 
     return null;

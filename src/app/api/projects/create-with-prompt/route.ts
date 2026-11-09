@@ -5,6 +5,7 @@ import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-
 
 import { DEFAULT_CONVERSATION_TITLE } from '@/features/conversations/constants';
 import { createProjectRequestSchema } from '@/features/projects/schemas';
+import { aiSettingsRequiredResponse, getOpenAI } from '@/features/settings/server/ai-settings';
 
 import { api } from '@/../convex/_generated/api';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from '@/constants/http-status-codes';
@@ -29,6 +30,8 @@ export async function POST(req: NextRequest) {
 
     const internalKey = env.POLARIS_CONVEX_INTERNAL_KEY;
     const { prompt } = data;
+
+    await getOpenAI(userId);
 
     const projectName = uniqueNamesGenerator({
       dictionaries: [adjectives, animals, colors],
@@ -77,6 +80,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ eventId: event.ids[0], projectId });
   } catch (error) {
+    const settingsResponse = aiSettingsRequiredResponse(error);
+
+    if (settingsResponse) return settingsResponse;
+
     console.error('[CREATE_PROJECT_WITH_PROMPT_ERROR]: ', error);
 
     return NextResponse.json(

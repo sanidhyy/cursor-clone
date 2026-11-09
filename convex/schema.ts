@@ -9,6 +9,14 @@ import {
 } from './validators';
 
 const schema = defineSchema({
+  userSettings: defineTable({
+    ownerId: v.string(),
+    apiKey: v.string(),
+    updatedAt: v.number(),
+  })
+    .index('by_owner', ['ownerId'])
+    .index('by_updated_at', ['updatedAt']),
+
   projects: defineTable({
     name: v.string(),
     ownerId: v.string(),

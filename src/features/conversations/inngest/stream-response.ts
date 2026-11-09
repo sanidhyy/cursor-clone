@@ -1,4 +1,3 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, tool, type ModelMessage } from 'ai';
 import { NonRetriableError, type GetStepTools } from 'inngest';
 
@@ -7,11 +6,12 @@ import {
   MAX_CODING_AGENT_COMPLETION_TOKENS,
   MAX_REASONING_SUMMARY_CHARACTERS,
 } from '@/features/conversations/constants';
+import { AISettingsRequiredError, getOpenAI } from '@/features/settings/server/ai-settings';
+import { getAISettingsErrorMessage } from '@/features/settings/server/errors';
 
 import { api } from '@/../convex/_generated/api';
 import type { Doc, Id } from '@/../convex/_generated/dataModel';
 import { CODING_AGENT_SYSTEM_PROMPT } from '@/constants/prompts';
-import { env } from '@/env/server';
 import type { inngest } from '@/inngest/client';
 import { convex } from '@/lib/convex-client';
 
@@ -33,20 +33,20 @@ const toolLabels: Record<string, string> = {
 };
 
 export const streamResponse = async ({
+  ownerId,
   messageId,
   internalKey,
   messages,
   tools,
   step,
 }: {
+  ownerId: string;
   messageId: Id<'messages'>;
   internalKey: string;
   messages: ModelMessage[];
   tools: ConversationTool[];
   step: GetStepTools<typeof inngest>;
 }) => {
-  const model = createOpenAI({ apiKey: env.OPENAI_API_KEY }).responses('gpt-5');
-
   const definitions = Object.fromEntries(
     tools.map((definition) => [
       definition.name,
@@ -93,20 +93,22 @@ export const streamResponse = async ({
 
       const controller = new AbortController();
 
-      const response = streamText({
-        abortSignal: controller.signal,
-        model,
-        system: CODING_AGENT_SYSTEM_PROMPT,
-        messages,
-        tools: definitions,
-        maxOutputTokens: MAX_CODING_AGENT_COMPLETION_TOKENS,
-        providerOptions: {
-          openai: { strictJsonSchema: false, reasoningSummary: 'auto', store: false },
-        },
-        maxRetries: 0,
-      });
-
       try {
+        const openai = await getOpenAI(ownerId);
+        const response = streamText({
+          abortSignal: controller.signal,
+          model: openai.responses('gpt-5'),
+          system: CODING_AGENT_SYSTEM_PROMPT,
+          messages,
+          tools: definitions,
+          maxOutputTokens: MAX_CODING_AGENT_COMPLETION_TOKENS,
+          providerOptions: {
+            openai: { strictJsonSchema: false, reasoningSummary: 'auto', store: false },
+          },
+          maxRetries: 0,
+          onError: () => {},
+        });
+
         for await (const chunk of response.fullStream) {
           if (chunk.type === 'error') throw chunk.error;
 
@@ -166,7 +168,11 @@ export const streamResponse = async ({
       } catch (error) {
         controller.abort();
 
-        throw error;
+        if (error instanceof NonRetriableError) throw error;
+
+        throw error instanceof AISettingsRequiredError
+          ? new NonRetriableError(error.message)
+          : new Error(getAISettingsErrorMessage(error));
       }
     });
 

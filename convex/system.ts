@@ -17,19 +17,13 @@ import type { Id } from '@/../convex/_generated/dataModel';
 import { mutation, query } from '@/../convex/_generated/server';
 import { codeSchema, promptSchema, queryLimitSchema } from '@/schemas/common';
 
+import { validateInternalKey } from './auth';
 import {
   codeContextValidator,
   messageStatusValidator,
   messageStepValidator,
   reasoningSummaryValidator,
 } from './validators';
-
-const validateInternalKey = (key: string) => {
-  const internalKey = process.env.POLARIS_CONVEX_INTERNAL_KEY;
-
-  if (!internalKey) throw new Error('POLARIS_CONVEX_INTERNAL_KEY is not configured');
-  if (key !== internalKey) throw new Error('Unauthorized');
-};
 
 export const getProjectById = query({
   args: {

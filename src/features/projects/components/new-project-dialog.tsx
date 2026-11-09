@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { PROJECT_TEMPLATES } from '@/features/projects/constants/project-templates';
 import { useNewProjectDraft } from '@/features/projects/hooks/use-new-project-draft';
 import { createProjectRequestSchema } from '@/features/projects/schemas';
+import { handleAISettingsRequired } from '@/features/settings/lib';
 
 import type { Id } from '@/../convex/_generated/dataModel';
 import {
@@ -73,6 +74,7 @@ export const NewProjectDialog = ({ open, onOpenChange }: NewProjectDialogProps) 
 
       router.push(`/projects/${projectId}`);
     } catch (error) {
+      handleAISettingsRequired(error);
       toast.error(getErrorMessage(error, 'Failed to create project'));
 
       return false;

@@ -5,13 +5,14 @@ import { Poppins } from 'next/font/google';
 import Image from 'next/image';
 
 import { cn } from 'cn';
-import { SparkleIcon } from 'lucide-react';
+import { SettingsIcon, SparkleIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 
 import { ImportGitHubDialog } from '@/features/projects/components/import-github-dialog';
 import { NewProjectDialog } from '@/features/projects/components/new-project-dialog';
 import { ProjectsCommandDialog } from '@/features/projects/components/projects-command-dialog';
 import { ProjectsList } from '@/features/projects/components/projects-list';
+import { useSettingsModal } from '@/features/settings/hooks/use-settings-modal';
 
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
@@ -25,6 +26,7 @@ type Dialog = 'command' | 'import' | 'newProject';
 
 export const ProjectsView = () => {
   const [activeDialog, setActiveDialog] = useState<Dialog | null>(null);
+  const { onOpen: onOpenSettingsModal } = useSettingsModal();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -86,6 +88,16 @@ export const ProjectsView = () => {
                 Polaris
               </h1>
             </div>
+
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon-sm'
+              onClick={onOpenSettingsModal}
+              title='AI Settings'
+            >
+              <SettingsIcon className='size-4' />
+            </Button>
           </div>
 
           <div className='flex w-full flex-col gap-4'>

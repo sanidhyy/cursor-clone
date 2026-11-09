@@ -6,13 +6,14 @@ import Link from 'next/link';
 
 import { UserButton } from '@clerk/nextjs';
 import { cn } from 'cn';
-import { AlertTriangleIcon, CloudCheckIcon } from 'lucide-react';
+import { AlertTriangleIcon, CloudCheckIcon, SettingsIcon } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { toast } from 'sonner';
 
 import { useFileSaveStore } from '@/features/editor/hooks/use-file-autosave';
 import { useProject, useRenameProject } from '@/features/projects/hooks/use-projects';
 import { projectNameSchema } from '@/features/projects/schemas';
+import { useSettingsModal } from '@/features/settings/hooks/use-settings-modal';
 
 import {
   Breadcrumb,
@@ -22,7 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LINKS } from '@/config';
@@ -50,6 +51,7 @@ export const Navbar = ({ projectId }: NavbarProps) => {
   const isSavingFiles = projectSaves.some((save) => save.status !== 'error');
   const project = useProject(projectId);
   const renameProject = useRenameProject();
+  const { onOpen: onOpenSettingsModal } = useSettingsModal();
 
   const handleStartRename = () => {
     if (!project) return;
@@ -195,6 +197,16 @@ export const Navbar = ({ projectId }: NavbarProps) => {
         >
           <FaGithub className='size-6' />
         </Link>
+
+        <Button
+          type='button'
+          variant='ghost'
+          size='icon-sm'
+          onClick={onOpenSettingsModal}
+          title='AI Settings'
+        >
+          <SettingsIcon className='size-4' />
+        </Button>
 
         <UserButton />
       </div>
