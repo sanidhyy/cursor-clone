@@ -11,7 +11,7 @@
 [![Github commits](https://flat.badgen.net/github/commits/sanidhyy/cursor-clone?icon=github&color=black&scale=1.01)](https://github.com/sanidhyy/cursor-clone/commits 'Github commits')
 [![GitHub issues](https://flat.badgen.net/github/issues/sanidhyy/cursor-clone?icon=github&color=black&scale=1.01)](https://github.com/sanidhyy/cursor-clone/issues 'GitHub issues')
 [![GitHub pull requests](https://flat.badgen.net/github/prs/sanidhyy/cursor-clone?icon=github&color=black&scale=1.01)](https://github.com/sanidhyy/cursor-clone/pulls 'GitHub pull requests')
-[![Vercel status](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/new 'Vercel status')
+[![Vercel status](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://aipolaris.vercel.app 'Vercel status')
 
 <!-- Table of Contents -->
 <details>
