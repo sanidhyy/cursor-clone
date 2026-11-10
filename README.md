@@ -1,6 +1,6 @@
 <a name="readme-top"></a>
 
-# AI-powered code editor built with Next.js 16
+# Polaris - AI-powered code editor built with Next.js 16
 
 ![AI-powered code editor built with Next.js 16](/.github/images/img_main.png 'AI-powered code editor built with Next.js 16')
 
