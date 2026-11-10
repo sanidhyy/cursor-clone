@@ -44,7 +44,6 @@
 Here is the folder structure of this app.
 
 <!--- FOLDER_STRUCTURE_START --->
-
 ```bash
 cursor-clone/
   |- convex/
@@ -110,7 +109,7 @@ cursor-clone/
       |--- common.ts
     |-- proxy.ts
   |- .env.example
-  |- .env.local
+  |- .env/.env.local
   |- .gitignore
   |- .prettierignore
   |- components.json
@@ -125,7 +124,6 @@ cursor-clone/
   |- tsconfig.json
   |- vercel.ts
 ```
-
 <!--- FOLDER_STRUCTURE_END --->
 
 <br />
@@ -280,7 +278,6 @@ Useful resources and dependencies that are used in Polaris.
 - Thanks to CodeWithAntonio: https://codewithantonio.com/
 
 <!--- DEPENDENCIES_START --->
-
 - [@ai-sdk/openai](https://www.npmjs.com/package/@ai-sdk/openai): ^4.0.111
 - [@base-ui/react](https://www.npmjs.com/package/@base-ui/react): ^1.9.0
 - [@clerk/nextjs](https://www.npmjs.com/package/@clerk/nextjs): ^7.9.25
