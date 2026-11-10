@@ -1,7 +1,7 @@
 import type { VercelConfig } from '@vercel/config/v1';
 
 export const config: VercelConfig = {
-  buildCommand: 'sh vercel.sh',
+  buildCommand: "pnpm dlx convex deploy --cmd 'pnpm run build'",
   crons: [
     {
       path: '/api/cron/ai-settings',

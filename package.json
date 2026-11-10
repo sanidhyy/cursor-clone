@@ -8,7 +8,6 @@
     "dev:convex": "convex dev",
     "dev:inngest": "inngest-cli dev",
     "build": "next build",
-    "build:production": "pnpm dlx convex deploy --cmd 'pnpm run build'",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
